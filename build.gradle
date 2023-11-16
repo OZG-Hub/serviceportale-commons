@@ -1,0 +1,71 @@
+plugins {
+  id "groovy"
+}
+
+repositories {
+  mavenCentral()
+}
+
+// The the serviceportale public API is maintained by the "Schildkröten" Team and the most recent version listed on
+// maven central: https://central.sonatype.com/artifact/de.seitenbau.serviceportal/prozess-scripting-api
+String serviceportalPublicApiVersion = "1.165.4"
+dependencies {
+  [
+          'org.codehaus.groovy:groovy-all:2.5.22',
+
+          "de.seitenbau.serviceportal:prozess-scripting-api:${serviceportalPublicApiVersion}",
+
+          "org.activiti:activiti-engine:5.22.0",
+
+  ].each { dep ->
+    implementation(dep) {
+      // Required to remove unneeded logging frameworks that break the build
+      // See: https://stackoverflow.com/a/59667631/3298787
+      exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+    }
+  }
+
+  // testing
+  implementation group: 'net.bytebuddy', name: 'byte-buddy-gradle-plugin', version: '1.10.1'
+  testImplementation "org.spockframework:spock-core:2.0-M1-groovy-2.5"
+
+  // Allow IntelliJ to load groovy grapes. Not required for scripts in the commons repo, but
+  // required for developing the scripts in the 'tools' folder.
+  implementation(group: 'org.apache.ivy', name: 'ivy', version: '2.4.0')
+}
+
+sourceSets {
+  main {
+    groovy {
+      srcDirs = ['scripts']
+    }
+  }
+
+  test {
+    groovy {
+      srcDirs = ['test']
+    }
+    resources {
+      srcDirs = ["test"]
+    }
+  }
+}
+
+test {
+  // Enable logging of test results
+  testLogging {
+    events "passed", "skipped", "failed"
+  }
+
+  // Enforce JUnit for Spock runs (see https://blog.solidsoft.pl/2020/01/02/migrating-spock-1.3-tests-to-spock-2.0/ )
+  useJUnitPlatform()
+
+  // Fail the build if no rests were run.
+  afterSuite { desc, result ->
+    if (!desc.parent) {
+      if (result.testCount == 0) {
+        throw new IllegalStateException("No tests were found. Failing the build")
+      }
+    }
+  }
+}
