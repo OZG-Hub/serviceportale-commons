@@ -24,3 +24,8 @@ jobs:
       run: ./gradlew --version
     - name: Run build with Gradle Wrapper
       run: ./gradlew test --stacktrace
+    - name: Archive test run result
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-run-result
+        path: ./build/reports/tests/test/index.html
