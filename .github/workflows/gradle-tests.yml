@@ -29,4 +29,4 @@ jobs:
       if: success() || failure() # Run in any case. Even if the previous tests failed.
       with:
         name: test-run-result
-        path: ./build/reports/tests/test/index.html
+        path: ./build/reports/tests/test
