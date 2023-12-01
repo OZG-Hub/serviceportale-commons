@@ -1,0 +1,45 @@
+name: Run unit tests with gradlew
+
+on: push # Run on every new push event (so mostly new commits)
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    # Use the same time zone as the serviceportal server and developer computers as changes would lead to failing tests
+    #   within the FormDumper specification
+    - uses: szenius/set-timezone@v1.2
+      with:
+        timezoneLinux: "Europe/Berlin"
+        timezoneMacos: "Europe/Berlin"
+        timezoneWindows: "W. Europe Standard Time"
+
+    - name: Checkout project
+      uses: actions/checkout@v3
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Setup Gradle
+      uses: gradle/gradle-build-action@v2
+
+    - name: Print gradlew version
+      run: ./gradlew --version
+
+    - name: Run build with Gradle Wrapper
+      run: ./gradlew test --stacktrace
+
+    - name: Archive test run result
+      uses: actions/upload-artifact@v3
+      if: success() || failure() # Run in any case. Even if the previous tests failed.
+      with:
+        name: test-run-result
+        path: ./build/reports/tests/test
