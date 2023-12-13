@@ -105,7 +105,7 @@ class FormDumper {
 
         // Now, build the instance
         if (!groupContentRendered.isEmpty()) {
-          result += "<h${baseHeadingLevel}>${group.title}</h${baseHeadingLevel}>"
+          result += "<h${baseHeadingLevel}>${instance.title}</h${baseHeadingLevel}>"
           // General headings for the instance
           result += "<table class=\"formdumper-table\">"
           result += "<thead><tr><th>Feld</th><th>Ihre Eingabe</th></tr></thead>"
