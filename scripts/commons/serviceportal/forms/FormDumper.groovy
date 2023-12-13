@@ -22,6 +22,7 @@ import java.text.SimpleDateFormat
 
 class FormDumper {
   private FormContentV1 formContent
+  private ScriptingApiV1 api
   /**
    * Users of FormDumper can specify additional rules which decided if a field should be hidden. By default we show all
    * fields.
@@ -38,16 +39,22 @@ class FormDumper {
    * @param additionalLogicToHideContent An optional closure to define additional rules to hide form fields. Input of
    * the closure is a FormFieldAndMapping. Output shall be a Boolean. True if the field should be hidden, false if the
    * field should be displayed.
+   * @param api The API of the serviceportal. The only way to access this is via the variable "apiV1" that is available
+   * in a script task (but unfortunately not inside a class in script tasks. That's why this parameter needs to be
+   * provided)
    */
   FormDumper(
           FormContentV1 formContent,
           @ClosureParams(value = SimpleType.class, options = "de.seitenbau.serviceportal.scripting.api.v1.form.FormFieldV1")
-                  Closure<Boolean> additionalLogicToHideContent = null) {
+                  Closure<Boolean> additionalLogicToHideContent = null,
+          ScriptingApiV1 api) {
     this.formContent = formContent
 
     if (additionalLogicToHideContent != null) {
       this.additionalLogicToHideContent = additionalLogicToHideContent
     }
+
+    this.api = api
   }
 
   /**
@@ -58,7 +65,6 @@ class FormDumper {
    * @return a String containing HTML code
    */
   String dumpFormAsHtmlTable(int baseHeadingLevel = 2) {
-    ScriptingApiV1 api = apiV1 // automatically set by Serviceportal
     FormV1 formAndMapping = api.getForm(formContent.getFormId())
     formAndMapping.setContent(formContent)
 
@@ -70,38 +76,36 @@ class FormDumper {
         // show the (otherwise possibly empty) group
         String groupContentRendered = ""
         // check if instance is shown
-        if (instance.isInstanceShown(formAndMapping)) {
-          instance.rows.each { FormRowV1 row ->
-            row.fields.each { FormFieldV1 field ->
-              // For rendering NPA fields hideDisabled must be false
-              if (shouldRenderField(field) && field.isShown(instance, formAndMapping)) {
-                groupContentRendered += "<tr>"
+        instance.rows.each { FormRowV1 row ->
+          row.fields.each { FormFieldV1 field ->
+            // For rendering NPA fields hideDisabled must be false
+            if (shouldRenderField(field) && field.isShown(instance, formAndMapping)) {
+              groupContentRendered += "<tr>"
 
-                // Left column: The question
-                groupContentRendered += "<td>${field.label}</td>"
+              // Left column: The question
+              groupContentRendered += "<td>${field.label}</td>"
 
-                // Right column: The answer
-                groupContentRendered += "<td>"
+              // Right column: The answer
+              groupContentRendered += "<td>"
 
-                if (field.type == FieldTypeV1.GEO_MAP) {
-                  // Special handling for GeoMap fields. Those fields are best represented as an image (rather than text)
-                  groupContentRendered += "<img src='data:image/jpeg;base64,${generateBase64StringOfImage(field.value as BinaryGeoMapContentV1)}' width='100%'>"
-                } else {
-                  // Escape the result of renderFieldForUserOutput as it might contain XSS content
-                  groupContentRendered += org.apache.commons.text.StringEscapeUtils.escapeHtml4(renderFieldForUserOutput(field))
-                }
-
-                groupContentRendered += "</td>"
-
-                groupContentRendered += "</tr>"
+              if (field.type == FieldTypeV1.GEO_MAP) {
+                // Special handling for GeoMap fields. Those fields are best represented as an image (rather than text)
+                groupContentRendered += "<img src='data:image/jpeg;base64,${generateBase64StringOfImage(field.value as BinaryGeoMapContentV1)}' width='100%'>"
+              } else {
+                // Escape the result of renderFieldForUserOutput as it might contain XSS content
+                groupContentRendered += org.apache.commons.text.StringEscapeUtils.escapeHtml4(renderFieldForUserOutput(field))
               }
+
+              groupContentRendered += "</td>"
+
+              groupContentRendered += "</tr>"
             }
           }
         }
 
         // Now, build the instance
         if (!groupContentRendered.isEmpty()) {
-          result += "<h${baseHeadingLevel}>${group.title}</h${baseHeadingLevel}>"
+          result += "<h${baseHeadingLevel}>${instance.title}</h${baseHeadingLevel}>"
           // General headings for the instance
           result += "<table class=\"formdumper-table\">"
           result += "<thead><tr><th>Feld</th><th>Ihre Eingabe</th></tr></thead>"
@@ -123,7 +127,6 @@ class FormDumper {
    * @return a String containing a human readable version of the form
    */
   String dumpFormAsText(boolean printGroupHeadings = true) {
-    ScriptingApiV1 api = apiV1 // automatically set by Serviceportal
     FormV1 formAndMapping = api.getForm(formContent.getFormId())
     String result = ""
 
@@ -327,6 +330,8 @@ class FormDumper {
    * @param field The field to render
    * @return The String representation
    */
+  @SuppressWarnings('GrDeprecatedAPIUsage')
+  // We need to support deprecated form field types as they might still be in use by older forms
   private static String renderFieldForUserOutput(FormFieldV1 field) {
     if (field.value == null || field.value.toString().isAllWhitespace()) {
       return "[Keine Eingabe]"

@@ -1,4 +1,5 @@
 import commons.serviceportal.forms.JsonToFormContentConverter
+import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormFieldContentV1
 import spock.lang.Specification
@@ -8,6 +9,7 @@ import java.text.SimpleDateFormat
 import commons.serviceportal.forms.FormDumper
 
 class FormDumperSpecification extends Specification {
+  private ScriptingApiV1 mockedApi = Mock()
 
   def "dumping a simple input to a csv"() {
     given:
@@ -16,7 +18,7 @@ class FormDumperSpecification extends Specification {
     mockedFieldContent.value >> "Example input of a user"
     mockedFormContent.fields >> ["exampleGroup:0:exampleField": mockedFieldContent]
 
-    FormDumper dumper = new FormDumper(mockedFormContent)
+    FormDumper dumper = new FormDumper(mockedFormContent, mockedApi)
 
     when:
     String csv = dumper.dumpFormAsCsv()
@@ -32,7 +34,7 @@ class FormDumperSpecification extends Specification {
     mockedFieldContent.value >> "Input with a \"quote\", a comma and nothing else."
     mockedFormContent.fields >> ["exampleGroup:0:exampleField": mockedFieldContent]
 
-    FormDumper dumper = new FormDumper(mockedFormContent)
+    FormDumper dumper = new FormDumper(mockedFormContent, mockedApi)
 
     when:
     String csv = dumper.dumpFormAsCsv()
@@ -68,7 +70,7 @@ class FormDumperSpecification extends Specification {
             "exampleGroup:0:dateField"  : mockedDateField
     ]
 
-    FormDumper dumper = new FormDumper(mockedFormContent)
+    FormDumper dumper = new FormDumper(mockedFormContent, mockedApi)
 
     when:
     String csv = dumper.dumpFormAsCsvWithDatatype()
@@ -87,7 +89,7 @@ class FormDumperSpecification extends Specification {
     FormContentV1 formContent = JsonToFormContentConverter.convert(json)
 
     when:
-    FormDumper dumper = new FormDumper(formContent)
+    FormDumper dumper = new FormDumper(formContent, mockedApi)
     String xml = dumper.dumpAsXml()
     def parsed = new XmlSlurper().parseText(xml)
 
