@@ -22,6 +22,7 @@ import java.text.SimpleDateFormat
 
 class FormDumper {
   private FormContentV1 formContent
+  private ScriptingApiV1 api
   /**
    * Users of FormDumper can specify additional rules which decided if a field should be hidden. By default we show all
    * fields.
@@ -38,16 +39,22 @@ class FormDumper {
    * @param additionalLogicToHideContent An optional closure to define additional rules to hide form fields. Input of
    * the closure is a FormFieldAndMapping. Output shall be a Boolean. True if the field should be hidden, false if the
    * field should be displayed.
+   * @param api The API of the serviceportal. The only way to access this is via the variable "apiV1" that is available
+   * in a script task (but unfortunately not inside a class in script tasks. That's why this parameter needs to be
+   * provided)
    */
   FormDumper(
           FormContentV1 formContent,
           @ClosureParams(value = SimpleType.class, options = "de.seitenbau.serviceportal.scripting.api.v1.form.FormFieldV1")
-                  Closure<Boolean> additionalLogicToHideContent = null) {
+                  Closure<Boolean> additionalLogicToHideContent = null,
+          ScriptingApiV1 api) {
     this.formContent = formContent
 
     if (additionalLogicToHideContent != null) {
       this.additionalLogicToHideContent = additionalLogicToHideContent
     }
+
+    this.api = api
   }
 
   /**
@@ -58,7 +65,6 @@ class FormDumper {
    * @return a String containing HTML code
    */
   String dumpFormAsHtmlTable(int baseHeadingLevel = 2) {
-    ScriptingApiV1 api = apiV1 // automatically set by Serviceportal
     FormV1 formAndMapping = api.getForm(formContent.getFormId())
     formAndMapping.setContent(formContent)
 
@@ -123,7 +129,6 @@ class FormDumper {
    * @return a String containing a human readable version of the form
    */
   String dumpFormAsText(boolean printGroupHeadings = true) {
-    ScriptingApiV1 api = apiV1 // automatically set by Serviceportal
     FormV1 formAndMapping = api.getForm(formContent.getFormId())
     String result = ""
 
