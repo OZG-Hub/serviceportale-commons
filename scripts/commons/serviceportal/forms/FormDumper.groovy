@@ -330,6 +330,8 @@ class FormDumper {
    * @param field The field to render
    * @return The String representation
    */
+  @SuppressWarnings('GrDeprecatedAPIUsage')
+  // We need to support deprecated form field types as they might still be in use by older forms
   private static String renderFieldForUserOutput(FormFieldV1 field) {
     if (field.value == null || field.value.toString().isAllWhitespace()) {
       return "[Keine Eingabe]"
