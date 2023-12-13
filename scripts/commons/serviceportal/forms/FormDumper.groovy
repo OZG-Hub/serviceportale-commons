@@ -76,31 +76,29 @@ class FormDumper {
         // show the (otherwise possibly empty) group
         String groupContentRendered = ""
         // check if instance is shown
-        if (instance.isInstanceShown(formAndMapping)) {
-          instance.rows.each { FormRowV1 row ->
-            row.fields.each { FormFieldV1 field ->
-              // For rendering NPA fields hideDisabled must be false
-              if (shouldRenderField(field) && field.isShown(instance, formAndMapping)) {
-                groupContentRendered += "<tr>"
+        instance.rows.each { FormRowV1 row ->
+          row.fields.each { FormFieldV1 field ->
+            // For rendering NPA fields hideDisabled must be false
+            if (shouldRenderField(field) && field.isShown(instance, formAndMapping)) {
+              groupContentRendered += "<tr>"
 
-                // Left column: The question
-                groupContentRendered += "<td>${field.label}</td>"
+              // Left column: The question
+              groupContentRendered += "<td>${field.label}</td>"
 
-                // Right column: The answer
-                groupContentRendered += "<td>"
+              // Right column: The answer
+              groupContentRendered += "<td>"
 
-                if (field.type == FieldTypeV1.GEO_MAP) {
-                  // Special handling for GeoMap fields. Those fields are best represented as an image (rather than text)
-                  groupContentRendered += "<img src='data:image/jpeg;base64,${generateBase64StringOfImage(field.value as BinaryGeoMapContentV1)}' width='100%'>"
-                } else {
-                  // Escape the result of renderFieldForUserOutput as it might contain XSS content
-                  groupContentRendered += org.apache.commons.text.StringEscapeUtils.escapeHtml4(renderFieldForUserOutput(field))
-                }
-
-                groupContentRendered += "</td>"
-
-                groupContentRendered += "</tr>"
+              if (field.type == FieldTypeV1.GEO_MAP) {
+                // Special handling for GeoMap fields. Those fields are best represented as an image (rather than text)
+                groupContentRendered += "<img src='data:image/jpeg;base64,${generateBase64StringOfImage(field.value as BinaryGeoMapContentV1)}' width='100%'>"
+              } else {
+                // Escape the result of renderFieldForUserOutput as it might contain XSS content
+                groupContentRendered += org.apache.commons.text.StringEscapeUtils.escapeHtml4(renderFieldForUserOutput(field))
               }
+
+              groupContentRendered += "</td>"
+
+              groupContentRendered += "</tr>"
             }
           }
         }
