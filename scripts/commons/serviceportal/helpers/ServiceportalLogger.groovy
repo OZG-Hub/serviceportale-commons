@@ -1,6 +1,7 @@
 package commons.serviceportal.helpers
 
 import commons.serviceportal.ServiceportalInformationGetter
+import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
 import org.activiti.engine.delegate.DelegateExecution
 import org.activiti.engine.impl.context.Context
 import org.slf4j.Logger
@@ -56,11 +57,12 @@ class ServiceportalLogger {
    * logs when run in a development environment (and logs a replacement string when run in another environment).
    *
    * @param msg The message to log
+   * @param scriptingApiVi The scripting API object for information about host
    */
-  static void logPersonalDataSecurely(String msg) {
+  static void logPersonalDataSecurely(String msg, ScriptingApiV1 scriptingApiV1) {
     boolean canLogPersonalData = false // To begin, assume we must not log personal data
 
-    if (ServiceportalInformationGetter.developmentInstances.contains(ServiceportalInformationGetter.thisInstance)) {
+    if (ServiceportalInformationGetter.developmentInstances.contains(ServiceportalInformationGetter.getThisInstance(scriptingApiV1))) {
       canLogPersonalData = true
     }
 
