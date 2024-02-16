@@ -97,7 +97,7 @@ class ServiceportalInformationGetter {
   }
 
   /**
-   * Returns the host name of the serviceportal instance. he host name is stored in a
+   * Returns the host name of the serviceportal instance. The host name is stored in a
    * process instance variable 'processEngineConfig' that is automatically set by the process engine. It might not be
    * available in call activities, in which case we throw an IllegalStateException.
    *
