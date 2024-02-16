@@ -26,8 +26,8 @@ class ServiceportalInformationGetter {
    *
    * @return
    */
-  static SERVICEPORTAL_INSTANCE getThisInstance() {
-    String host = getHost()
+  static SERVICEPORTAL_INSTANCE getThisInstance(ScriptingApiV1 scriptingApiV1) {
+    String host = getHost(scriptingApiV1)
 
     switch (host) {
       case "test.service-bw.de":
@@ -86,16 +86,27 @@ class ServiceportalInformationGetter {
    * process instance variable 'processEngineConfig' that is automatically set by the process engine. It might not be
    * available in call activities, in which case we throw an IllegalStateException.
    *
+   * @param scriptingApiV1 The ScriptingAPI object for host information
+   *
    * @return something like "https://amt24dev.sachsen.de"
    */
-  String getBaseUrl() throws IllegalStateException {
+  static String getBaseUrl(ScriptingApiV1 scriptingApiV1) throws IllegalStateException {
     final String prefix = "https://" // AFAIK, all instances currently use HTTPS.
-    String host = getHost()
+    String host = getHost(scriptingApiV1)
     return prefix + host
   }
 
-  private String getHost() {
-    ScriptingApiV1 api = apiV1 // automatically set by Serviceportal
+  /**
+   * Returns the host name of the serviceportal instance. he host name is stored in a
+   * process instance variable 'processEngineConfig' that is automatically set by the process engine. It might not be
+   * available in call activities, in which case we throw an IllegalStateException.
+   *
+   * @param scriptingApiV1 The ScriptingAPI object for host information
+   *
+   * @return something like "amt24dev.sachsen.de"
+   */
+  static String getHost(ScriptingApiV1 scriptingApiV1) {
+    ScriptingApiV1 api = scriptingApiV1
 
     // The host name is stored in a process instance variable 'processEngineConfig' that is automatically set by the
     // process engine. It might not be available in call activities, in which case we throw an exception.
