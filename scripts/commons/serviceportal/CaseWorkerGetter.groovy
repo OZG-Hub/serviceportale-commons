@@ -27,6 +27,13 @@ class CaseWorkerGetter {
     List<String> detectedServicekontoIds = []
     String logMessage = "Determining case worker...\n"
 
+    // Null check. I don't think this can happen if the service task is used, but we need to inform developers if they
+    // make mistakes while using this class
+    if (assignedOrgUnits == null) {
+      throw new IllegalArgumentException("Required method parameter 'assignedOrgUnits' was null. Please provide a valid value.")
+    }
+
+
     // Ensure there are assigned org units
     if (assignedOrgUnits.empty) {
       throw new CouldNotDetermineCaseWorkerException("Failed to determine assigned case worker. List of assigned org " +
