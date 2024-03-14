@@ -219,7 +219,7 @@ class ConsistentCaseWorkerFormGenerator {
                     "width": 12,
                     "validationRules": [],
                     "required": true,
-                    "source": {
+                    "target": {
                       "service": "prozess",
                       "variableName": "caseWorkerResult"
                     }
