@@ -142,9 +142,36 @@ class ConsistentCaseWorkerFormGenerator {
           row."fields".each { field ->
             String type = field."type"
 
-            final Set<String> disableableFieldTypes = ["STRING", "DATE", "TEXTAREA", "DROPDOWN_SINGLE_SELECT",
-                                                       "BOOLEAN", "RADIO_BUTTONS", "MULTIPLE_FILE", "CHECKBOX"]
-            final Set<String> fieldTypesThatDontNeedToBeDisabled = ["HINTBOX"]
+            final Set<String> disableableFieldTypes = [
+                    "STRING",
+                    "STRING_AJAX_AUTOCOMPLETE",
+                    "KFZ_KENNZEICHEN",
+                    "DATE",
+                    "TIME",
+                    "EURO_BETRAG",
+                    "FILE",
+                    "TEXTAREA",
+                    "DROPDOWN_SINGLE_SELECT",
+                    "DROPDOWN_MULTIPLE_SELECT",
+                    "TWO_LIST_SELECT",
+                    "SINGLE_CHECKBOX",
+                    "BOOLEAN",
+                    "RADIO_BUTTONS",
+                    "MULTIPLE_FILE",
+                    "CHECKBOX",
+            ]
+            final Set<String> fieldTypesThatDontNeedToBeDisabled = [
+                    "HINTBOX",
+                    "SUBMITTED_WITH_NPA_INFO",
+                    "TEXT",
+                    "H1",
+                    "H2",
+                    "PLACEHOLDER",
+                    "DOWNLOAD",
+                    "VIDEO",
+                    "IMAGE",
+                    "GEO_MAP",
+            ]
 
             if (disableableFieldTypes.contains(type)) {
               field."disabled" = true
