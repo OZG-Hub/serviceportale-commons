@@ -319,7 +319,9 @@ class FormDumper {
         case FieldTypeV1.RADIO_BUTTONS:
           return findLabelForPossibleValue(field.possibleValues, field.value as String)
           break
-        case FieldTypeV1.DROPDOWN_SINGLE_SELECT || FieldTypeV1.DROPDOWN_SINGLE_SELECT_AJAX:
+        case FieldTypeV1.DROPDOWN_SINGLE_SELECT:
+          // fall-through
+        case FieldTypeV1.DROPDOWN_SINGLE_SELECT_AJAX:
           return findLabelForPossibleValue(field.possibleValues, field.value as String)
           break
         case FieldTypeV1.DROPDOWN_MULTIPLE_SELECT:
@@ -363,7 +365,7 @@ class FormDumper {
           BinaryGeoMapContentV1 value = field.value as BinaryGeoMapContentV1
           return "Nutzereingaben: '${value.json}', Auswahl von Elementen auf der Karte: '${value.selectionJson}'"
         default:
-          ServiceportalLogger.logWarn("FormDumper.renderFieldForUserOutput does not know how to display this field '${field.type}', " + "so it defaults to toString()")
+          ServiceportalLogger.logWarn("FormDumper.renderFieldForUserOutput does not know how to display this field '${field.type}' (${field.type.class.name}), " + "so it defaults to toString().")
           return field.value.toString()
           break
       }
