@@ -126,6 +126,30 @@ class FormDumperSpecification extends Specification {
     parsed.mainGroupId.instance_0.npa == false
   }
 
+  def "dumping a form with an illegally named placeholder field to XML"() {
+    given:
+    final String FILENAME = "resources/formContent_withPlaceholder.json"
+    String json = getClass().getResourceAsStream(FILENAME).text
+    FormContentV1 formContent = JsonToFormContentConverter.convert(json)
+
+    when:
+    FormDumper dumper = new FormDumper(formContent)
+    String xml = dumper.dumpAsXml()
+    def parsed = new XmlSlurper().parseText(xml)
+
+    then:
+    noExceptionThrown()
+
+    and:
+    xml == """\
+      <serviceportal-fields>
+        <exampleGroup>
+          <instance_0>
+            <exampleField>hi!</exampleField>
+          </instance_0>
+        </exampleGroup>
+      </serviceportal-fields>""".stripIndent()
+  }
 }
 
 
