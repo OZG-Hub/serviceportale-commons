@@ -4,22 +4,19 @@
   "formTitle": "",
   "validationMessages": [],
   "fields": {
-    "exampleGroup:0:a4bcd97b": {
+    "exampleGroup:0:123ileagalNameForXmlNode": {
       "value": null,
       "validationMessages": [],
       "valid": true,
-      "possibleValues": null,
-      "validationMessagesAsString": []
+      "possibleValues": null
     },
     "exampleGroup:0:exampleField": {
       "value": "hi!",
       "validationMessages": [],
       "valid": true,
-      "possibleValues": null,
-      "validationMessagesAsString": []
+      "possibleValues": null
     }
   },
-  "validationMessagesAsString": [],
   "context": {
     "processInstanceId": "6XVK7gZJXTac1iSnloAF3A",
     "taskSubprocessId": "6XVK7gZJXTac1iSnloAF3A",
