@@ -45,86 +45,88 @@ class FormDumperSpecification extends Specification {
       FormFieldV1 field
       switch (fieldKey.fieldId) {
         case "textanzeige":
-          field = Mock(FormFieldV1, constructorArgs: [fullKey, FieldTypeV1.TEXT]) as FormFieldV1
-          field.value >> null
+          field = new FormFieldV1(fullKey, FieldTypeV1.TEXT)
+          field.value = null
           break
         case "time":
-          field = Mock(FormFieldV1, constructorArgs: [fullKey, FieldTypeV1.TIME]) as FormFieldV1
-          field.value >> new GregorianCalendar(1970, 0, 1, 11, 55, 00).time
+          field = new FormFieldV1(fullKey, FieldTypeV1.TIME)
+          field.value = new GregorianCalendar(1970, 0, 1, 11, 55, 00).time
           break
         case "yesno":
-          field = Mock(FormFieldV1, constructorArgs: [fullKey, FieldTypeV1.BOOLEAN]) as FormFieldV1
-          field.value >> true
+          field = new FormFieldV1(fullKey, FieldTypeV1.BOOLEAN)
+          field.value = true
           break
         case "npa":
-          field = Mock(FormFieldV1, constructorArgs: [fullKey, FieldTypeV1.SUBMITTED_WITH_NPA_INFO]) as FormFieldV1
-          field.value >> false
+          field = new FormFieldV1(fullKey, FieldTypeV1.SUBMITTED_WITH_NPA_INFO)
+          field.value = false
           break
+        case "exampleField":
+          //noinspection GroovyFallthrough - intentional. This should also be handled as a textbox type field
         case "textfield":
-          field = Mock(FormFieldV1, constructorArgs: [fullKey, FieldTypeV1.STRING]) as FormFieldV1
-          field.value >> "Example input"
+          field = new FormFieldV1(fullKey, FieldTypeV1.STRING)
+          field.value = "Example input"
           break
         case "simpleCheckbox":
-          field = Mock(FormFieldV1, constructorArgs: [fullKey, FieldTypeV1.SINGLE_CHECKBOX]) as FormFieldV1
-          field.value >> true
+          field = new FormFieldV1(fullKey, FieldTypeV1.SINGLE_CHECKBOX)
+          field.value = true
           break
         case "radioButtons":
-          field = Mock(FormFieldV1, constructorArgs: [fullKey, FieldTypeV1.RADIO_BUTTONS]) as FormFieldV1
-          field.possibleValues >> pvList
-          field.value >> "firstOption"
+          field = new FormFieldV1(fullKey, FieldTypeV1.RADIO_BUTTONS)
+          field.possibleValues = pvList
+          field.value = "firstOption"
           break
         case "textarea":
-          field = Mock(FormFieldV1, constructorArgs: [fullKey, FieldTypeV1.TEXTAREA]) as FormFieldV1
-          field.value >> "Example\ninput"
+          field = new FormFieldV1(fullKey, FieldTypeV1.TEXTAREA)
+          field.value = "Example\ninput"
           break
         case "mutliselect":
-          field = Mock(FormFieldV1, constructorArgs: [fullKey, FieldTypeV1.DROPDOWN_MULTIPLE_SELECT]) as FormFieldV1
-          field.possibleValues >> pvList
-          field.value >> ["firstOption"]
+          field = new FormFieldV1(fullKey, FieldTypeV1.DROPDOWN_MULTIPLE_SELECT)
+          field.possibleValues = pvList
+          field.value = ["firstOption"]
           break
         case "checkboxList":
-          field = Mock(FormFieldV1, constructorArgs: [fullKey, FieldTypeV1.FILE]) as FormFieldV1
-          field.possibleValues >> pvList
-          field.value >> ["firstOption"]
+          field = new FormFieldV1(fullKey, FieldTypeV1.FILE)
+          field.possibleValues = pvList
+          field.value = ["firstOption"]
           break
         case "schubser":
-          field = Mock(FormFieldV1, constructorArgs: [fullKey, FieldTypeV1.TWO_LIST_SELECT]) as FormFieldV1
-          field.possibleValues >> pvList
-          field.value >> ["firstOption"]
+          field = new FormFieldV1(fullKey, FieldTypeV1.TWO_LIST_SELECT)
+          field.possibleValues = pvList
+          field.value = ["firstOption"]
           break
         case "fileupload":
-          field = Mock(FormFieldV1, constructorArgs: [fullKey, FieldTypeV1.FILE]) as FormFieldV1
-          field.value >> mockedBinaryContent
+          field = new FormFieldV1(fullKey, FieldTypeV1.FILE)
+          field.value = mockedBinaryContent
           break
         case "h2":
-          field = Mock(FormFieldV1, constructorArgs: [fullKey, FieldTypeV1.H2]) as FormFieldV1
+          field = new FormFieldV1(fullKey, FieldTypeV1.H2)
           break
         case "h1":
-          field = Mock(FormFieldV1, constructorArgs: [fullKey, FieldTypeV1.H1]) as FormFieldV1
+          field = new FormFieldV1(fullKey, FieldTypeV1.H1)
           break
         case "date":
-          field = Mock(FormFieldV1, constructorArgs: [fullKey, FieldTypeV1.TEXTAREA]) as FormFieldV1
-          field.value >> new GregorianCalendar(2015, Calendar.JULY, 8).time
+          field = new FormFieldV1(fullKey, FieldTypeV1.TEXTAREA)
+          field.value = new GregorianCalendar(2015, Calendar.JULY, 8).time
           break
+        case "123illegalNameForXmlNode":
+          //noinspection GroovyFallthrough - intentional. This should also be handled as a placeholder type field
         case "ca4618b9":
-          field = Mock(FormFieldV1, constructorArgs: [fullKey, FieldTypeV1.PLACEHOLDER]) as FormFieldV1
+          field = new FormFieldV1(fullKey, FieldTypeV1.PLACEHOLDER)
           break
         case "selectOptions":
-          field = Mock(FormFieldV1, constructorArgs: [fullKey, FieldTypeV1.DROPDOWN_SINGLE_SELECT]) as FormFieldV1
-          field.possibleValues >> pvList
-          field.value >> "firstOption"
+          field = new FormFieldV1(fullKey, FieldTypeV1.DROPDOWN_SINGLE_SELECT)
+          field.possibleValues = pvList
+          field.value = "firstOption"
           break
         case "money":
-          field = Mock(FormFieldV1, constructorArgs: [fullKey, FieldTypeV1.EURO_BETRAG]) as FormFieldV1
-          field.value >> new BigDecimal("12.34")
+          field = new FormFieldV1(fullKey, FieldTypeV1.EURO_BETRAG)
+          field.value = new BigDecimal("12.34")
           break
         default:
           throw new UnsupportedOperationException("Mocked field for key '$fieldKey' not implemented yet. Please " +
                   "update FormDumperSpecification.")
       }
       return field
-
-      // TODO: Mock different FormFieldV1's, depending on field key
     }
   }
 
@@ -160,7 +162,7 @@ class FormDumperSpecification extends Specification {
     csv == "exampleGroup:0:exampleField,\"Input with a \"\"quote\"\", a comma and nothing else.\"\r\n"
   }
 
-  def "Escaping unsecure content"(){
+  def "Escaping unsecure content"() {
     // As reported in https://tracker.seitenbau.net/browse/SKDE-1303
 
     given:
@@ -258,7 +260,7 @@ class FormDumperSpecification extends Specification {
       <serviceportal-fields>
         <exampleGroup>
           <instance_0>
-            <exampleField>hi!</exampleField>
+            <exampleField>Example input</exampleField>
           </instance_0>
         </exampleGroup>
       </serviceportal-fields>""".stripIndent()
