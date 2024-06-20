@@ -4,6 +4,7 @@ package commons.serviceportal.forms
 import commons.serviceportal.helpers.ServiceportalLogger
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldTypeV1
+import de.seitenbau.serviceportal.scripting.api.v1.form.FormFieldKeyV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FormFieldV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FormRowV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FormV1
@@ -244,6 +245,10 @@ class FormDumper {
    * @return The XML as a String
    */
   String dumpAsXml() {
+    // Get additional data about the form itself (not just the content of the filled form)
+    FormV1 formAndMapping = api.getForm(formContent.getFormId())
+    formAndMapping.setContent(formContent)
+
     StringWriter writer = new StringWriter()
     MarkupBuilder xml = new MarkupBuilder(writer)
 
@@ -257,12 +262,22 @@ class FormDumper {
           groupInstances.each { groupInstance ->
             // XML tags can NOT start with a number, so we need to add a prefix like "instance_" to it.
             "instance_$groupInstance"() {
-              Set<String> fields = formContent.fields.keySet().findAll { it.startsWith("$group:$groupInstance:") }
-                      .collect { it.split(":")[2] }
-              fields.each { field ->
-                String fullKey = "$group:$groupInstance:$field".toString()
-                assert field.matches("^[a-zA-Z_][\\w.-]*\$"): "Failed to create XML file. Field name '$field' is not a valid name for a XML node. Please change the field name."
-                "${field}" { mkp.yieldUnescaped(renderFieldForXmlOutput(formContent.fields.get(fullKey))) }
+
+              Set<String> fieldKeys = formContent.fields.keySet().findAll { it.startsWith("$group:$groupInstance:") }
+              fieldKeys.each { fullKey ->
+                String fieldKey = fullKey.split(":")[2]
+                assert fieldKey != null
+
+                FormFieldV1 field = formAndMapping.getFieldInInstance(new FormFieldKeyV1(group, groupInstance, fieldKey))
+                if (shouldRenderField(field)) {
+
+                  assert fieldKey.matches("^[a-zA-Z_][\\w.-]*\$"): "Failed to create XML file. Field name '$fieldKey' is not a valid name for a XML node. Please change the field name."
+
+                  // Add field to XML object
+                  "${fieldKey}" {
+                    mkp.yieldUnescaped(renderFieldForXmlOutput(field))
+                  }
+                }
               }
             }
           }
@@ -374,7 +389,7 @@ class FormDumper {
     throw new RuntimeException("Unexpected field type '${field.type}'. " + "The FormDumper class does not know how to render that.")
   }
 
-  private static String renderFieldForXmlOutput(FormFieldContentV1 field) {
+  private static String renderFieldForXmlOutput(FormFieldV1 field) {
     def value = field.value
 
     if (value == null) {
