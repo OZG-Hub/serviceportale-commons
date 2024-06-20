@@ -4,7 +4,7 @@
   "formTitle": "",
   "validationMessages": [],
   "fields": {
-    "exampleGroup:0:123ileagalNameForXmlNode": {
+    "exampleGroup:0:123illegalNameForXmlNode": {
       "value": null,
       "validationMessages": [],
       "valid": true,
