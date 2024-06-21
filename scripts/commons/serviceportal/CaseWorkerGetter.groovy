@@ -3,8 +3,8 @@ package commons.serviceportal
 import de.seitenbau.serviceportal.scripting.api.v1.message.NachrichtAbsenderV1
 import de.seitenbau.serviceportal.scripting.api.v1.process.ProcessOrganisationseinheitExtendedV1
 import de.seitenbau.serviceportal.scripting.api.v1.process.ProcessOrganisationseinheitKommunikationV1
-import org.slf4j.LoggerFactory
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class CaseWorkerGetter {
 
@@ -66,7 +66,7 @@ class CaseWorkerGetter {
       } else {
         logMessage += "  Ausprägung is ok.\n"
       }
-      assignedCaseworkerName = assignedOrgUnit.oe.i18n.find{it.sprache == "de"}
+      assignedCaseworkerName = assignedOrgUnit.oe.i18n.find { it.sprache == "de" }
       // Find relevant "Kommunikation"
       logMessage += "  Checking \"Kommunikation\" of orgUnit...\n"
       Set<ProcessOrganisationseinheitKommunikationV1> kommunikationsWithServicekonto = assignedOrgUnit.oe.kommunikation.findAll { it?.kanal == "SERVICEKONTO" }
