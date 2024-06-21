@@ -1,5 +1,6 @@
 package commons.serviceportal
 
+import de.seitenbau.serviceportal.scripting.api.v1.message.NachrichtAbsenderV1
 import de.seitenbau.serviceportal.scripting.api.v1.process.ProcessOrganisationseinheitExtendedV1
 import de.seitenbau.serviceportal.scripting.api.v1.process.ProcessOrganisationseinheitKommunikationV1
 import org.slf4j.LoggerFactory
@@ -99,6 +100,25 @@ class CaseWorkerGetter {
     logMessage += "Determining assigned case worker succesfull. Result is Servicekonto '$result'."
     if (printLogMessages) logger.info(logMessage)
     return result
+  }
+
+
+  /**
+   *
+   * @param assignedOrgUnits the result of the ZustaendigeOrganisationseinheitErmittelnService service task.
+   * See https://doku.pmp.seitenbau.com/x/ZAYG for more details
+   *
+   * @return the assigned caseworker as a 'NachrichtAbsenderV1' so it can be used as a sender for
+   * 'Servicekontonachrichten'
+   */
+  static NachrichtAbsenderV1 getAssignedCaseWorkerAsSender(List<ProcessOrganisationseinheitExtendedV1> assignedOrgUnits) {
+    String name = assignedOrgUnits.first()?.oe?.i18n?.first()?.name?.toString()
+    Long senderId = Long.parseLong(getAssignedCaseWorker(assignedOrgUnits))
+    NachrichtAbsenderV1 sender = new NachrichtAbsenderV1.NachrichtAbsenderV1Builder()
+            .name(name)
+            .servicekontoId(senderId)
+            .build()
+    return sender
   }
 }
 
