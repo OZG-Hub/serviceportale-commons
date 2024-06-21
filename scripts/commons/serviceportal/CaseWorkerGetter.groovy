@@ -17,17 +17,17 @@ class CaseWorkerGetter {
    * @param printLogMessages Set to false to prevent a log message from being printed. Otherwise a single log message
    * on the INFO level will be printed that displays how the case worker was determined.
    *
-   * @return The 'Servicekonto-ID' aka. 'IDP-ID' for the given list.
-   * Not including the "userId:" part.
+   * @return the assigned caseworker as a 'NachrichtAbsenderV1' so it can be used as a sender for
+   * 'Servicekontonachrichten'
    *
    * @throws CouldNotDetermineCaseWorkerException when no case worker could be determined. The exceptions message
    * contains more details about the reason.
    */
-  static String getAssignedCaseWorker(List<ProcessOrganisationseinheitExtendedV1> assignedOrgUnits, boolean printLogMessages = true) throws CouldNotDetermineCaseWorkerException {
+  static NachrichtAbsenderV1 getAssignedCaseWorkerAsSender(List<ProcessOrganisationseinheitExtendedV1> assignedOrgUnits, boolean printLogMessages = true) throws CouldNotDetermineCaseWorkerException {
     Logger logger = LoggerFactory.getLogger("de.seitenbau.serviceportal.prozess.publicserviceteam.commonssubmodule.caseworkergetter")
     List<String> detectedServicekontoIds = []
     String logMessage = "Determining case worker...\n"
-
+    String assignedCaseworkerName = ""
     // Null check. I don't think this can happen if the service task is used, but we need to inform developers if they
     // make mistakes while using this class
     if (assignedOrgUnits == null) {
@@ -66,7 +66,7 @@ class CaseWorkerGetter {
       } else {
         logMessage += "  Ausprägung is ok.\n"
       }
-
+      assignedCaseworkerName = assignedOrgUnit.oe.i18n.find{it.sprache == "de"}
       // Find relevant "Kommunikation"
       logMessage += "  Checking \"Kommunikation\" of orgUnit...\n"
       Set<ProcessOrganisationseinheitKommunikationV1> kommunikationsWithServicekonto = assignedOrgUnit.oe.kommunikation.findAll { it?.kanal == "SERVICEKONTO" }
@@ -96,10 +96,14 @@ class CaseWorkerGetter {
               "valid, for example by setting a assigned org unit to 'beratend tätig'.")
     }
 
-    String result = detectedServicekontoIds.first()
-    logMessage += "Determining assigned case worker succesfull. Result is Servicekonto '$result'."
+    String senderId = detectedServicekontoIds.first()
+    NachrichtAbsenderV1 sender = new NachrichtAbsenderV1.NachrichtAbsenderV1Builder()
+            .name(assignedCaseworkerName)
+            .servicekontoId(Long.parseLong(senderId))
+            .build()
+    logMessage += "Determining assigned case worker succesfull. Result is Servicekonto '$senderId'."
     if (printLogMessages) logger.info(logMessage)
-    return result
+    return sender
   }
 
 
@@ -108,17 +112,12 @@ class CaseWorkerGetter {
    * @param assignedOrgUnits the result of the ZustaendigeOrganisationseinheitErmittelnService service task.
    * See https://doku.pmp.seitenbau.com/x/ZAYG for more details
    *
-   * @return the assigned caseworker as a 'NachrichtAbsenderV1' so it can be used as a sender for
-   * 'Servicekontonachrichten'
+   * @return The 'Servicekonto-ID' aka. 'IDP-ID' for the given list.
+   * Not including the "userId:" part.
    */
-  static NachrichtAbsenderV1 getAssignedCaseWorkerAsSender(List<ProcessOrganisationseinheitExtendedV1> assignedOrgUnits) {
-    String name = assignedOrgUnits.first()?.oe?.i18n?.first()?.name?.toString()
-    Long senderId = Long.parseLong(getAssignedCaseWorker(assignedOrgUnits))
-    NachrichtAbsenderV1 sender = new NachrichtAbsenderV1.NachrichtAbsenderV1Builder()
-            .name(name)
-            .servicekontoId(senderId)
-            .build()
-    return sender
+  static String getAssignedCaseWorker(List<ProcessOrganisationseinheitExtendedV1> assignedOrgUnits) {
+    NachrichtAbsenderV1 sender = getAssignedCaseWorkerAsSender(assignedOrgUnits)
+    return sender.servicekontoId.toString()
   }
 }
 
