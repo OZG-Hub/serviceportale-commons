@@ -8,6 +8,7 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGeoMapContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.GeoMapContentV1
+import groovy.json.JsonBuilder
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 import groovy.xml.MarkupBuilder
@@ -283,12 +284,23 @@ class FormDumper {
   }
 
   /**
-   * Dump the form as a simplified map.
+   * Dump the form as a Json string. It can either be a very simplified version of the user data or more complex.
+   * The simplified version represents everything as a String or a List of Strings. For example uploaded files are only
+   * represented with there filenames.
+   * The more complex Json contains for example not only filenames for uploads but also the base64 representation.
    *
-   * @return a map that uses the field key 'groupId_instanceIndex_fieldId'
-   * as key and the user data as values.
+   * Example of a simplifies Json version:
+   *
+   * {
+   *   "group1_0_textfield": "text",
+   *   "group1_0_checkbox": [ "option1", "option3"],
+   *   "group_1_upload": ["file.pdf" ]
+   * }
+   *
+   * @param isSimplifiedJson A boolean that controls whether a simplified json is returned or a more complex json
+   * @return a Json String
    */
-  Map dumpAsMap() {
+  String dumpAsJson(boolean isSimplifiedJson) {
     // Get additional data about the form itself (not just the content of the filled form)
     FormV1 formAndMapping = api.getForm(formContent.getFormId())
     formAndMapping.setContent(formContent)
@@ -300,90 +312,64 @@ class FormDumper {
         row.fields.each { field ->
           String fieldId = "${instance.id}_${instance.index}_${field.id}"
           // If field is an upload or lists, xml rendering is not suitable
-          if (shouldRenderField(field)) {
-            def fieldValue
-            if (field.value == null || field.value.toString().isAllWhitespace()) {
-              fieldValue = ""
-            }
+          if (field.value == null || field.value.toString().isAllWhitespace()) {
+            fieldsAndValues.put(fieldId, "")
+          }
+          if (shouldRenderField(field) && field.isShown(instance, formAndMapping)) {
             switch (field.type) {
-              case FieldTypeV1.H1:
-                // Fallthrough
-              case FieldTypeV1.H2:
-                // Fallthrough
-              case FieldTypeV1.HINTBOX:
-                // Fallthrough
-              case FieldTypeV1.IMAGE:
-                // Fallthrough
-              case FieldTypeV1.TEXT:
-                // Fallthrough
-              case FieldTypeV1.SUBMITTED_WITH_NPA_INFO:
-                // Fallthrough
-              case FieldTypeV1.DOWNLOAD:
-                // Fallthrough
-              case FieldTypeV1.VIDEO:
-                // Fallthrough
-              case FieldTypeV1.PDF:
-                // Fallthrough
-              case FieldTypeV1.PLACEHOLDER:
-                fieldValue = ""
-                break
-              case FieldTypeV1.RADIO_BUTTONS:
-                // Fallthrough
-              case FieldTypeV1.TEXTAREA:
-                // Fallthrough
-              case FieldTypeV1.STRING:
-                if (field.value.class == VerifiedFormFieldValueV1) {
-                  fieldValue = (field.value as VerifiedFormFieldValueV1).value
-                } else {
-                  fieldValue = field.value
-                }
-                break
-              case FieldTypeV1.CHECKBOX:
-                fieldValue = field.value // return List of values
-                break
+            // Some return values from fields need to be transformed in order to be used
               case FieldTypeV1.TIME:
-                // Fallthrough
+                fieldsAndValues.put(fieldId, (field.value as Date).format("HH:mm"))
+                break
               case FieldTypeV1.DATE:
-                fieldValue = field.value.toString()
+                fieldsAndValues.put(fieldId, (field.value as Date).format("dd.MM.yyyy"))
                 break
               case FieldTypeV1.MULTIPLE_FILE:
-                fieldValue = (field.value as List<BinaryContentV1>).collect { it.uploadedFilename }
+                if (isSimplifiedJson) {
+                  def fileNames = (field.value as List<BinaryContentV1>).collect { it.uploadedFilename }
+                  fieldsAndValues.put(fieldId, fileNames)
+                } else {
+                  List uploadedFiles = []
+                  (field.value as List<BinaryContentV1>).each {
+                    String fileAsBase64 = it.data.encodeBase64()
+                    Map file = ["filename"    : it.uploadedFilename,
+                                "fileAsBase64": fileAsBase64
+                    ]
+                    uploadedFiles.add(file)
+                  }
+                  fieldsAndValues.put(fieldId, uploadedFiles)
+                }
                 break
               case FieldTypeV1.FILE: // This is deprecated but still in use for old processes
-                fieldValue = (field.value as BinaryContentV1).uploadedFilename
-                break
-              case FieldTypeV1.BOOLEAN:
-                // Fallthrough
-              case FieldTypeV1.DROPDOWN_SINGLE_SELECT:
-                // Fallthrough
-              case FieldTypeV1.DROPDOWN_SINGLE_SELECT_AJAX:
-                // Fallthrough
-              case FieldTypeV1.EURO_BETRAG:
-                // Fallthrough
-              case FieldTypeV1.KFZ_KENNZEICHEN:
-                // Fallthrough
-              case FieldTypeV1.SINGLE_CHECKBOX:
-                // Fallthrough
-              case FieldTypeV1.STRING_AJAX_AUTOCOMPLETE:
-                fieldValue = field.value
+                if (isSimplifiedJson) {
+                  fieldsAndValues.put(fieldId, (field.value as BinaryContentV1).uploadedFilename)
+                } else {
+                  String fileAsBase64 = (field.value as BinaryContentV1).data.encodeBase64()
+                  Map file = ["filename"    : (field.value as BinaryContentV1).uploadedFilename,
+                              "fileAsBase64": fileAsBase64
+                  ]
+                  fieldsAndValues.put(fieldId, file)
+                }
                 break
               case FieldTypeV1.GEO_MAP:
-                // The GeoMap object has a lot of data that it return
-                // As we can not determine what is useful everything except the file should be used
                 GeoMapContentV1 content = field.value as GeoMapContentV1
-                fieldValue = [content.json, content.selectionJson, content.searchJson]
+                fieldsAndValues.put(fieldId, [content.json, content.selectionJson, content.searchJson])
                 break
               default:
-                ServiceportalLogger.logWarn("FormDumper.renderFieldForMap does not know how to display this field '${field.type}' (${field.type.class.name}), " + "so it defaults to toString().")
-                fieldValue = field.value.toString()
+                // For most fields it makes sense to use the return values as is
+                ServiceportalLogger.logWarn("FormDumper.renderFieldForUserOutput does not know how to display this field '${field.type}' (${field.type.class.name}), " + "so it defaults to toString().")
+                if (field.value.class == VerifiedFormFieldValueV1) {
+                  fieldsAndValues.put(fieldId, (field.value as VerifiedFormFieldValueV1).value)
+                } else {
+                  fieldsAndValues.put(fieldId, field.value)
+                }
                 break
             }
-            fieldsAndValues.put(fieldId, fieldValue)
           }
         }
       }
     }
-    return fieldsAndValues
+    return new JsonBuilder(fieldsAndValues).toPrettyString()
   }
 
   /**
