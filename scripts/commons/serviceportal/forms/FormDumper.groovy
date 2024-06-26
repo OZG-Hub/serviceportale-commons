@@ -3,17 +3,11 @@ package commons.serviceportal.forms
 
 import commons.serviceportal.helpers.ServiceportalLogger
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.FieldTypeV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.FormFieldKeyV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.FormFieldV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.FormRowV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.FormV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.PossibleValueV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.VerifiedFormFieldValueV1
+import de.seitenbau.serviceportal.scripting.api.v1.form.*
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGeoMapContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormFieldContentV1
+import de.seitenbau.serviceportal.scripting.api.v1.form.content.GeoMapContentV1
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 import groovy.xml.MarkupBuilder
@@ -286,6 +280,110 @@ class FormDumper {
     }
 
     return writer.toString()
+  }
+
+  /**
+   * Dump the form as a simplified map.
+   *
+   * @return a map that uses the field key 'groupId_instanceIndex_fieldId'
+   * as key and the user data as values.
+   */
+  Map dumpAsMap() {
+    // Get additional data about the form itself (not just the content of the filled form)
+    FormV1 formAndMapping = api.getForm(formContent.getFormId())
+    formAndMapping.setContent(formContent)
+
+    Map fieldsAndValues = [:]
+    // traverse through formAndMapping
+    formAndMapping.groupInstances.each { instance ->
+      instance.rows.each { row ->
+        row.fields.each { field ->
+          String fieldId = "${instance.id}_${instance.index}_${field.id}"
+          // If field is an upload or lists, xml rendering is not suitable
+          if (shouldRenderField(field)) {
+            def fieldValue
+            if (field.value == null || field.value.toString().isAllWhitespace()) {
+              fieldValue = ""
+            }
+            switch (field.type) {
+              case FieldTypeV1.H1:
+                // Fallthrough
+              case FieldTypeV1.H2:
+                // Fallthrough
+              case FieldTypeV1.HINTBOX:
+                // Fallthrough
+              case FieldTypeV1.IMAGE:
+                // Fallthrough
+              case FieldTypeV1.TEXT:
+                // Fallthrough
+              case FieldTypeV1.SUBMITTED_WITH_NPA_INFO:
+                // Fallthrough
+              case FieldTypeV1.DOWNLOAD:
+                // Fallthrough
+              case FieldTypeV1.VIDEO:
+                // Fallthrough
+              case FieldTypeV1.PDF:
+                // Fallthrough
+              case FieldTypeV1.PLACEHOLDER:
+                fieldValue = ""
+                break
+              case FieldTypeV1.RADIO_BUTTONS:
+                // Fallthrough
+              case FieldTypeV1.TEXTAREA:
+                // Fallthrough
+              case FieldTypeV1.STRING:
+                if (field.value.class == VerifiedFormFieldValueV1) {
+                  fieldValue = (field.value as VerifiedFormFieldValueV1).value
+                } else {
+                  fieldValue = field.value
+                }
+                break
+              case FieldTypeV1.CHECKBOX:
+                fieldValue = field.value // return List of values
+                break
+              case FieldTypeV1.TIME:
+                // Fallthrough
+              case FieldTypeV1.DATE:
+                fieldValue = field.value.toString()
+                break
+              case FieldTypeV1.MULTIPLE_FILE:
+                fieldValue = (field.value as List<BinaryContentV1>).collect { it.uploadedFilename }
+                break
+              case FieldTypeV1.FILE: // This is deprecated but still in use for old processes
+                fieldValue = (field.value as BinaryContentV1).uploadedFilename
+                break
+              case FieldTypeV1.BOOLEAN:
+                // Fallthrough
+              case FieldTypeV1.DROPDOWN_SINGLE_SELECT:
+                // Fallthrough
+              case FieldTypeV1.DROPDOWN_SINGLE_SELECT_AJAX:
+                // Fallthrough
+              case FieldTypeV1.EURO_BETRAG:
+                // Fallthrough
+              case FieldTypeV1.KFZ_KENNZEICHEN:
+                // Fallthrough
+              case FieldTypeV1.SINGLE_CHECKBOX:
+                // Fallthrough
+              case FieldTypeV1.STRING_AJAX_AUTOCOMPLETE:
+                fieldValue = field.value
+                break
+              case FieldTypeV1.GEO_MAP:
+                // The GeoMap object has a lot of data that it return
+                // As we can not determine what is useful everything except the file should be used
+                GeoMapContentV1 content = field.value as GeoMapContentV1
+                fieldValue = [content.json, content.selectionJson, content.searchJson]
+                break
+              default:
+                ServiceportalLogger.logWarn("FormDumper.renderFieldForMap does not know how to display this field '${field.type}' (${field.type.class.name}), " + "so it defaults to toString().")
+                fieldValue = field.value.toString()
+                break
+            }
+            fieldsAndValues.put(fieldId, fieldValue)
+          }
+        }
+      }
+    }
+    return fieldsAndValues
   }
 
   /**
