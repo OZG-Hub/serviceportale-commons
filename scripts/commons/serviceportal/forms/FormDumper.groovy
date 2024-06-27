@@ -3,17 +3,12 @@ package commons.serviceportal.forms
 
 import commons.serviceportal.helpers.ServiceportalLogger
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.FieldTypeV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.FormFieldKeyV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.FormFieldV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.FormRowV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.FormV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.PossibleValueV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.VerifiedFormFieldValueV1
+import de.seitenbau.serviceportal.scripting.api.v1.form.*
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGeoMapContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormFieldContentV1
+import de.seitenbau.serviceportal.scripting.api.v1.form.content.GeoMapContentV1
+import groovy.json.JsonBuilder
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 import groovy.xml.MarkupBuilder
@@ -286,6 +281,93 @@ class FormDumper {
     }
 
     return writer.toString()
+  }
+
+  /**
+   * Dump the form as a Json string. It can either be a very simplified version of the user data or more complex.
+   * The simplified version represents everything as a String or a List of Strings. For example uploaded files are only
+   * represented with their filenames.
+   * The more complex Json contains for example not only filenames for uploads but also the base64 representation.
+   *
+   * Example of a simplifies Json version:
+   *
+   * {
+   *   "group1_0_textfield": "text",
+   *   "group1_0_checkbox": [ "option1", "option3"],
+   *   "group_1_upload": ["file.pdf" ]
+   * }
+   *
+   * @param isSimplifiedJson A boolean that controls whether a simplified json is returned or a more complex json
+   * @return a Json String
+   */
+  String dumpAsJson(boolean isSimplifiedJson) {
+    // Get additional data about the form itself (not just the content of the filled form)
+    FormV1 formAndMapping = api.getForm(formContent.getFormId())
+    formAndMapping.setContent(formContent)
+
+    Map fieldsAndValues = [:]
+    // traverse through formAndMapping
+    formAndMapping.groupInstances.each { instance ->
+      instance.rows.each { row ->
+        row.fields.each { field ->
+          String fieldId = "${instance.id}_${instance.index}_${field.id}"
+          // If field is an upload or lists, xml rendering is not suitable
+          if (field.value == null || field.value.toString().isAllWhitespace()) {
+            fieldsAndValues.put(fieldId, "")
+          }
+          if (shouldRenderField(field) && field.isShown(instance, formAndMapping)) {
+            switch (field.type) {
+              case FieldTypeV1.TIME:
+                fieldsAndValues.put(fieldId, (field.value as Date).format("HH:mm"))
+                break
+              case FieldTypeV1.DATE:
+                fieldsAndValues.put(fieldId, (field.value as Date).format("dd.MM.yyyy"))
+                break
+              case FieldTypeV1.MULTIPLE_FILE:
+                if (isSimplifiedJson) {
+                  def fileNames = (field.value as List<BinaryContentV1>).collect { it.uploadedFilename }
+                  fieldsAndValues.put(fieldId, fileNames)
+                } else {
+                  List uploadedFiles = []
+                  (field.value as List<BinaryContentV1>).each {
+                    String fileAsBase64 = it.data.encodeBase64()
+                    Map file = ["filename"    : it.uploadedFilename,
+                                "fileAsBase64": fileAsBase64
+                    ]
+                    uploadedFiles.add(file)
+                  }
+                  fieldsAndValues.put(fieldId, uploadedFiles)
+                }
+                break
+              case FieldTypeV1.FILE: // This is deprecated but still in use for old processes
+                if (isSimplifiedJson) {
+                  fieldsAndValues.put(fieldId, (field.value as BinaryContentV1).uploadedFilename)
+                } else {
+                  String fileAsBase64 = (field.value as BinaryContentV1).data.encodeBase64()
+                  Map file = ["filename"    : (field.value as BinaryContentV1).uploadedFilename,
+                              "fileAsBase64": fileAsBase64
+                  ]
+                  fieldsAndValues.put(fieldId, file)
+                }
+                break
+              case FieldTypeV1.GEO_MAP:
+                GeoMapContentV1 content = field.value as GeoMapContentV1
+                fieldsAndValues.put(fieldId, [content.json, content.selectionJson, content.searchJson])
+                break
+              default:
+                // For most fields it makes sense to use the return values as is
+                if (field.value.class == VerifiedFormFieldValueV1) {
+                  fieldsAndValues.put(fieldId, (field.value as VerifiedFormFieldValueV1).value)
+                } else {
+                  fieldsAndValues.put(fieldId, field.value)
+                }
+                break
+            }
+          }
+        }
+      }
+    }
+    return new JsonBuilder(fieldsAndValues).toPrettyString()
   }
 
   /**
