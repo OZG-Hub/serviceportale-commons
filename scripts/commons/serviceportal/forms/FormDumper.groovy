@@ -317,7 +317,6 @@ class FormDumper {
           }
           if (shouldRenderField(field) && field.isShown(instance, formAndMapping)) {
             switch (field.type) {
-            // Some return values from fields need to be transformed in order to be used
               case FieldTypeV1.TIME:
                 fieldsAndValues.put(fieldId, (field.value as Date).format("HH:mm"))
                 break
@@ -357,7 +356,6 @@ class FormDumper {
                 break
               default:
                 // For most fields it makes sense to use the return values as is
-                ServiceportalLogger.logWarn("FormDumper.renderFieldForUserOutput does not know how to display this field '${field.type}' (${field.type.class.name}), " + "so it defaults to toString().")
                 if (field.value.class == VerifiedFormFieldValueV1) {
                   fieldsAndValues.put(fieldId, (field.value as VerifiedFormFieldValueV1).value)
                 } else {
