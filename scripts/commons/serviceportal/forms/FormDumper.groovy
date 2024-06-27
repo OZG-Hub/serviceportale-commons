@@ -286,7 +286,7 @@ class FormDumper {
   /**
    * Dump the form as a Json string. It can either be a very simplified version of the user data or more complex.
    * The simplified version represents everything as a String or a List of Strings. For example uploaded files are only
-   * represented with there filenames.
+   * represented with their filenames.
    * The more complex Json contains for example not only filenames for uploads but also the base64 representation.
    *
    * Example of a simplifies Json version:
