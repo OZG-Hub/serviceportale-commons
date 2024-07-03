@@ -429,12 +429,14 @@ class FormDumper {
           break
         case FieldTypeV1.DATE:
           // Retrieving values via the "Vertrauensniveaus" returns Dates in VerifiedFormFieldValueV1 objects
+          Date date
           if (field.value.class == VerifiedFormFieldValueV1) {
             VerifiedFormFieldValueV1 verifiedValue = field.value as VerifiedFormFieldValueV1
-            return (verifiedValue.value as Date).format("dd.MM.yyyy")
+            date = verifiedValue.value as Date
           } else {
-            return (field.value as Date).format("dd.MM.yyyy")
+            date = field.value as Date
           }
+          return date.format("dd.MM.yyyy")
           break
         case FieldTypeV1.TIME:
           return (field.value as Date).format("HH:mm")
