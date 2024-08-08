@@ -54,10 +54,12 @@ class ConsistentTranslationValidator {
 
     // Remove acceptable differences
     differences.removeAll { it.path == "id" } // The id of the form has to be different, as they are separate forms
-    differences.removeAll { it.path.endsWith("title") } // The title attribute is only used for display purposes
-    differences.removeAll { it.path.endsWith("label") } // The label attribute is only used for display purposes
-    differences.removeAll { it.path.endsWith("additionalConfig.text") } // The text attribute (of the additionalConfig element) is only used for display purposes
-    differences.removeAll { it.path.endsWith("helptext") } // The helptext is only used for display purposes
+    differences.removeAll { it.path.endsWith("title") } // title of sections or similar
+    differences.removeAll { it.path.endsWith("label") } // labels of questions
+    differences.removeAll { it.path.endsWith("additionalConfig.text") } // E.g. the label of hint-boxes
+    differences.removeAll { it.path.endsWith("helptext") } // Hover text on labels
+    differences.removeAll { it.path.endsWith("addRowButton") } // Button labels
+    differences.removeAll { it.path.endsWith("deleteRowButton") } // Button labels
 
     // Check if there are any non-acceptable differences remaining
     if (differences.isEmpty()) {
