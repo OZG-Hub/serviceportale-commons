@@ -53,11 +53,7 @@ class ConsistentTranslationValidator {
     List<Difference> differences = findDifferences(form1, form2)
 
     // Remove acceptable differences
-    differences.removeAll { it.path == "id" } // The id of the form has to be different, as they are separate forms
-    differences.removeAll { it.path.endsWith("title") } // The title attribute is only used for display purposes
-    differences.removeAll { it.path.endsWith("label") } // The label attribute is only used for display purposes
-    differences.removeAll { it.path.endsWith("additionalConfig.text") } // The text attribute (of the additionalConfig element) is only used for display purposes
-    differences.removeAll { it.path.endsWith("helptext") } // The helptext is only used for display purposes
+    differences.removeAll { isTranslatableAttribute(it.path) }
 
     // Check if there are any non-acceptable differences remaining
     if (differences.isEmpty()) {
@@ -97,7 +93,27 @@ class ConsistentTranslationValidator {
     return differences.findAll { it != null }
   }
 
+  /**
+   * Returns if a give attribute (from the form json) is allowed to be translated.
+   *
+   * Examples:
+   * - The root "id" attribute --> true, because a translated form will have a different id
+   * - Attributes, ending in "label" --> true, because that's the text a user reads in front of a form field
+   * - The "id" attribute of a field --> false, because that might be used in a display condition
+   *
+   * @param attributePath the json path to the attribute. E.g. "sections[0].fieldGroups[1].rows[3].fields[0].label"
+   *
+   * @return true or false
+   */
+  private static boolean isTranslatableAttribute(String attributePath) {
+    if (attributePath == "id" ) return true // The id of the form has to be different, as they are separate forms
+    if (attributePath.endsWith("title")) return true // The title attribute is only used for display purposes
+    if (attributePath.endsWith("label")) return true // The label attribute is only used for display purposes
+    if (attributePath.endsWith("additionalConfig.text")) return true // The text attribute (of the additionalConfig element) is only used for display purposes
+    if (attributePath.endsWith("helptext")) return true // The helptext is only used for display purposes
 
+    return false
+  }
 }
 
 class Difference {
