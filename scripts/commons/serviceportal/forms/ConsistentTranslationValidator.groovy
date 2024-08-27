@@ -10,8 +10,39 @@ import groovy.json.JsonSlurper
 class ConsistentTranslationValidator {
   Map<String, String> formsToContent = [:] // Mapping form name to form content (as JSON-String)
 
+  static List<String> exportTranslatableStrings(String formDefinition) {
+    def parsed = new JsonSlurper().parseText(formDefinition)
+
+    List<String> result = collectTranslatableStringsInSubgroup(parsed)
+    return result
+  }
+
   ConsistentTranslationValidator(Map<String, String> formsToContent) {
     this.formsToContent = formsToContent
+  }
+
+  static List<String> collectTranslatableStringsInSubgroup(def thisLevel, String path = '') {
+    List<String> translatableStrings = []
+
+    if (thisLevel instanceof Map) {
+      for (subElement in thisLevel) {
+        String currentPath = path ? "${path}.${subElement.key}" : subElement.key
+        translatableStrings.addAll(collectTranslatableStringsInSubgroup(subElement.value, currentPath))
+      }
+    } else if (thisLevel instanceof List) {
+      for (int i = 0; i < thisLevel.size(); i++) {
+        String currentPath = "${path}[${i}]"
+        translatableStrings.addAll(collectTranslatableStringsInSubgroup(thisLevel.get(i), currentPath))
+      }
+    } else {
+      if (isTranslatableAttribute(path)) {
+        translatableStrings.add(thisLevel)
+      } else {
+        // This attribute is not translatable. So just skip this iteration.
+      }
+    }
+
+    return translatableStrings
   }
 
   void validate() {
