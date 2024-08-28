@@ -10,8 +10,39 @@ import groovy.json.JsonSlurper
 class ConsistentTranslationValidator {
   Map<String, String> formsToContent = [:] // Mapping form name to form content (as JSON-String)
 
+  static List<String> exportTranslatableStrings(String formDefinition) {
+    def parsed = new JsonSlurper().parseText(formDefinition)
+
+    List<String> result = collectTranslatableStringsInSubgroup(parsed)
+    return result
+  }
+
   ConsistentTranslationValidator(Map<String, String> formsToContent) {
     this.formsToContent = formsToContent
+  }
+
+  static List<String> collectTranslatableStringsInSubgroup(def thisLevel, String path = '') {
+    List<String> translatableStrings = []
+
+    if (thisLevel instanceof Map) {
+      for (subElement in thisLevel) {
+        String currentPath = path ? "${path}.${subElement.key}" : subElement.key
+        translatableStrings.addAll(collectTranslatableStringsInSubgroup(subElement.value, currentPath))
+      }
+    } else if (thisLevel instanceof List) {
+      for (int i = 0; i < thisLevel.size(); i++) {
+        String currentPath = "${path}[${i}]"
+        translatableStrings.addAll(collectTranslatableStringsInSubgroup(thisLevel.get(i), currentPath))
+      }
+    } else {
+      if (isTranslatableAttribute(path)) {
+        translatableStrings.add(thisLevel)
+      } else {
+        // This attribute is not translatable. So just skip this iteration.
+      }
+    }
+
+    return translatableStrings
   }
 
   void validate() {
@@ -53,13 +84,7 @@ class ConsistentTranslationValidator {
     List<Difference> differences = findDifferences(form1, form2)
 
     // Remove acceptable differences
-    differences.removeAll { it.path == "id" } // The id of the form has to be different, as they are separate forms
-    differences.removeAll { it.path.endsWith("title") } // title of sections or similar
-    differences.removeAll { it.path.endsWith("label") } // labels of questions
-    differences.removeAll { it.path.endsWith("additionalConfig.text") } // E.g. the label of hint-boxes
-    differences.removeAll { it.path.endsWith("helptext") } // Hover text on labels
-    differences.removeAll { it.path.endsWith("addRowButton") } // Button labels
-    differences.removeAll { it.path.endsWith("deleteRowButton") } // Button labels
+    differences.removeAll { isTranslatableAttribute(it.path) }
 
     // Check if there are any non-acceptable differences remaining
     if (differences.isEmpty()) {
@@ -99,7 +124,47 @@ class ConsistentTranslationValidator {
     return differences.findAll { it != null }
   }
 
+  /**
+   * Returns if a give attribute (from the form json) is allowed to be translated.
+   *
+   * Examples:
+   * - The root "id" attribute --> true, because a translated form will have a different id
+   * - Attributes, ending in "label" --> true, because that's the text a user reads in front of a form field
+   * - The "id" attribute of a field --> false, because that might be used in a display condition
+   *
+   * @param attributePath the json path to the attribute. E.g. "sections[0].fieldGroups[1].rows[3].fields[0].label"
+   *
+   * @return true or false
+   */
+  private static boolean isTranslatableAttribute(String attributePath) {
+    if (attributePath == "id") return true // The id of the form has to be different, as they are separate forms
 
+    if (attributePath.endsWith("title")) return true // title of sections or similar
+    if (attributePath.endsWith("label")) return true // labels of questions
+    if (attributePath.endsWith("placeholder")) return true // placeholder in questions
+
+    if (attributePath.endsWith("additionalConfig.text")) return true // E.g. the label of hint-boxes
+
+    if (attributePath.endsWith("caption")) return true // image caption
+    if (attributePath.endsWith("alt")) return true // image alt tag
+
+    if (attributePath.endsWith("helptext")) return true // Hover text on labels
+    if (attributePath.endsWith("addRowButton")) return true // Button labels
+    if (attributePath.endsWith("deleteRowButton")) return true // Button labels
+    if (attributePath.endsWith("addRowButtonInfoText")) return true // hover text for AddRow buttons
+    if (attributePath.endsWith("deleteRowButtonInfoText")) return true // hover text for DeleteRow buttons
+
+    if (attributePath.endsWith("instanceTitleTemplate")) return true // template for repeatable groups / accordions
+
+    if (attributePath.endsWith("requiredValidationFailedMessage")) return true // message if validation failed
+    if (attributePath.endsWith("typeValidationFailedMessage")) return true // message if validation failed
+    if (attributePath.endsWith("validationErrorMessage")) return true // message if validation failed
+    if (attributePath.endsWith("validationInvalidNumberMessage")) return true // message if validation failed
+    if (attributePath.endsWith("validationDecimalPointError")) return true // message if validation failed
+    if (attributePath.endsWith("validationNonNegativeNumberError")) return true // message if validation failed
+
+    return false
+  }
 }
 
 class Difference {
