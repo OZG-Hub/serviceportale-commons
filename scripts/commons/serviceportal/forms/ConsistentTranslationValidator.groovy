@@ -137,11 +137,13 @@ class ConsistentTranslationValidator {
    * @return true or false
    */
   private static boolean isTranslatableAttribute(String attributePath) {
-    if (attributePath == "id" ) return true // The id of the form has to be different, as they are separate forms
-    if (attributePath.endsWith("title")) return true // The title attribute is only used for display purposes
-    if (attributePath.endsWith("label")) return true // The label attribute is only used for display purposes
-    if (attributePath.endsWith("additionalConfig.text")) return true // The text attribute (of the additionalConfig element) is only used for display purposes
-    if (attributePath.endsWith("helptext")) return true // The helptext is only used for display purposes
+    if (attributePath == "id") return true // The id of the form has to be different, as they are separate forms
+    if (attributePath.endsWith("title")) return true // title of sections or similar
+    if (attributePath.endsWith("label")) return true // labels of questions
+    if (attributePath.endsWith("additionalConfig.text")) return true // E.g. the label of hint-boxes
+    if (attributePath.endsWith("helptext")) return true // Hover text on labels
+    if (attributePath.endsWith("addRowButton")) return true // Button labels
+    if (attributePath.endsWith("deleteRowButton")) return true // Button labels
 
     return false
   }
