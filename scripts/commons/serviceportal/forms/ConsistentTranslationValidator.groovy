@@ -138,12 +138,30 @@ class ConsistentTranslationValidator {
    */
   private static boolean isTranslatableAttribute(String attributePath) {
     if (attributePath == "id") return true // The id of the form has to be different, as they are separate forms
+
     if (attributePath.endsWith("title")) return true // title of sections or similar
     if (attributePath.endsWith("label")) return true // labels of questions
+    if (attributePath.endsWith("placeholder")) return true // placeholder in questions
+
     if (attributePath.endsWith("additionalConfig.text")) return true // E.g. the label of hint-boxes
+
+    if (attributePath.endsWith("caption")) return true // image caption
+    if (attributePath.endsWith("alt")) return true // image alt tag
+
     if (attributePath.endsWith("helptext")) return true // Hover text on labels
     if (attributePath.endsWith("addRowButton")) return true // Button labels
     if (attributePath.endsWith("deleteRowButton")) return true // Button labels
+    if (attributePath.endsWith("addRowButtonInfoText")) return true // hover text for AddRow buttons
+    if (attributePath.endsWith("deleteRowButtonInfoText")) return true // hover text for DeleteRow buttons
+
+    if (attributePath.endsWith("instanceTitleTemplate")) return true // template for repeatable groups / accordions
+
+    if (attributePath.endsWith("requiredValidationFailedMessage")) return true // message if validation failed
+    if (attributePath.endsWith("typeValidationFailedMessage")) return true // message if validation failed
+    if (attributePath.endsWith("validationErrorMessage")) return true // message if validation failed
+    if (attributePath.endsWith("validationInvalidNumberMessage")) return true // message if validation failed
+    if (attributePath.endsWith("validationDecimalPointError")) return true // message if validation failed
+    if (attributePath.endsWith("validationNonNegativeNumberError")) return true // message if validation failed
 
     return false
   }
