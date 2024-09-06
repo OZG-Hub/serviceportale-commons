@@ -66,7 +66,7 @@ class CaseWorkerGetter {
       } else {
         logMessage += "  Ausprägung is ok.\n"
       }
-      assignedCaseworkerName = assignedOrgUnit.oe.i18n.find { it.sprache == "de" }
+      assignedCaseworkerName = assignedOrgUnit.oe.i18n.find { it.sprache == "de" }.name
       // Find relevant "Kommunikation"
       logMessage += "  Checking \"Kommunikation\" of orgUnit...\n"
       Set<ProcessOrganisationseinheitKommunikationV1> kommunikationsWithServicekonto = assignedOrgUnit.oe.kommunikation.findAll { it?.kanal == "SERVICEKONTO" }
