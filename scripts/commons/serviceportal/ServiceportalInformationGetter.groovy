@@ -2,8 +2,6 @@ package commons.serviceportal
 
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
 import org.activiti.engine.impl.context.Context
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 /**
  * Get various information about the serviceportal instance this process is running in.
@@ -16,10 +14,6 @@ class ServiceportalInformationGetter {
           SERVICEPORTAL_INSTANCE.AMT24_DEV,
           SERVICEPORTAL_INSTANCE.SERVICE_KOMMUNE,
   ].asImmutable()
-
-  // We must not use ServiceportalLogger here as the would cause a infinite recursion during the build process (as
-  // ServiceportalLogger includes ServiceportalInformationGetter already)
-  static Logger logger = LoggerFactory.getLogger("de.seitenbau.serviceportal.prozess.serviceportalinformationgetter")
 
   /**
    * Return an identifier about the serviceportal instance this process is running in.
@@ -45,8 +39,9 @@ class ServiceportalInformationGetter {
       case "dpdev.behoerden-serviceportal.de":
         return SERVICEPORTAL_INSTANCE.OZG_HUB_DATAPORT_DEV
       default:
-        logger.warn("Failed to classify host '$host' as serviceportal instance as this value was not known to " +
-                "ServiceportalInformationGetter.getThisInstance(). Please extend this method by the new host.")
+        scriptingApiV1.logger.warn("Failed to classify host '$host' as serviceportal instance " +
+                "as this value was not known to ServiceportalInformationGetter.getThisInstance(). " +
+                "Please extend this method by the new host.")
         return SERVICEPORTAL_INSTANCE.OTHER
     }
   }

@@ -1,5 +1,7 @@
 import commons.serviceportal.CouldNotDetermineCaseWorkerException
 import commons.serviceportal.CaseWorkerGetter
+import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
+import de.seitenbau.serviceportal.scripting.api.v1.LoggerApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.process.ProcessOrganisationseinheitExtendedV1
 import de.seitenbau.serviceportal.scripting.api.v1.process.ProcessOrganisationseinheitI18nV1
 import de.seitenbau.serviceportal.scripting.api.v1.process.ProcessOrganisationseinheitKommunikationV1
@@ -9,6 +11,8 @@ import spock.lang.Specification
 class CaseWorkerGetterSpecification extends Specification {
   def "get assigned case worker for valid entry"() {
     given:
+    ScriptingApiV1 mockedApi = Mock()
+    mockedApi.logger >> Mock(LoggerApiV1)
     String expectedCaseWorkerId = "12345"
 
     ProcessOrganisationseinheitExtendedV1 processOeExtended = Mock()
@@ -27,7 +31,7 @@ class CaseWorkerGetterSpecification extends Specification {
     List<ProcessOrganisationseinheitExtendedV1> assignedOrgUnits = [processOeExtended]
 
     when:
-    String caseWorker = CaseWorkerGetter.getAssignedCaseWorker(assignedOrgUnits)
+    String caseWorker = CaseWorkerGetter.getAssignedCaseWorker(assignedOrgUnits, mockedApi)
 
     then:
     caseWorker == expectedCaseWorkerId
@@ -35,6 +39,8 @@ class CaseWorkerGetterSpecification extends Specification {
 
   def "get assigned case worker for not-servicekonto kommunikation"() {
     given:
+    ScriptingApiV1 mockedApi = Mock()
+    mockedApi.logger >> Mock(LoggerApiV1)
     ProcessOrganisationseinheitExtendedV1 processOeExtended = Mock()
     processOeExtended.aufgabengebiet >> "KEINE"
     processOeExtended.oe >> {
@@ -51,7 +57,7 @@ class CaseWorkerGetterSpecification extends Specification {
     List<ProcessOrganisationseinheitExtendedV1> assignedOrgUnits = [processOeExtended]
 
     when:
-    String caseWorker = CaseWorkerGetter.getAssignedCaseWorker(assignedOrgUnits)
+    String caseWorker = CaseWorkerGetter.getAssignedCaseWorker(assignedOrgUnits, mockedApi)
 
     then:
     CouldNotDetermineCaseWorkerException exception = thrown(CouldNotDetermineCaseWorkerException)
@@ -60,6 +66,8 @@ class CaseWorkerGetterSpecification extends Specification {
 
   def "get assigned case worker for missing kommunikation"() {
     given:
+    ScriptingApiV1 mockedApi = Mock()
+    mockedApi.logger >> Mock(LoggerApiV1)
     ProcessOrganisationseinheitExtendedV1 processOeExtended = Mock()
     processOeExtended.aufgabengebiet >> "KEINE"
     processOeExtended.oe >> {
@@ -71,7 +79,7 @@ class CaseWorkerGetterSpecification extends Specification {
     List<ProcessOrganisationseinheitExtendedV1> assignedOrgUnits = [processOeExtended]
 
     when:
-    String caseWorker = CaseWorkerGetter.getAssignedCaseWorker(assignedOrgUnits)
+    String caseWorker = CaseWorkerGetter.getAssignedCaseWorker(assignedOrgUnits, mockedApi)
 
     then:
     CouldNotDetermineCaseWorkerException exception = thrown(CouldNotDetermineCaseWorkerException)

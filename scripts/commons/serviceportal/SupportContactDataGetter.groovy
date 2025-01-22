@@ -1,6 +1,5 @@
 package commons.serviceportal
 
-import commons.serviceportal.helpers.ServiceportalLogger
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.start.OrganisationseinheitParameterV1
 import de.seitenbau.serviceportal.scripting.api.v1.start.StartParameterV1
@@ -41,7 +40,7 @@ class SupportContactDataGetter {
               "E-Mail: service-bw@im.bwl.de\n" +
               "Telefax: +49 (0)711/231-5000\n" +
               "Internetseite: https://im.baden-wuerttemberg.de"
-      ServiceportalLogger.logWarn("Failed to determine contact when displaying error page for the user. Process " +
+      api.logger.warn("Failed to determine contact when displaying error page for the user. Process " +
               "start parameter 'organisationseinheit' was null. (Probably because this process was not started in a " +
               "parametrized way.) Defaulting to '$defaultContact'")
       return defaultContact

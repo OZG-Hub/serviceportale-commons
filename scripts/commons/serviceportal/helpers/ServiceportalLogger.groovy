@@ -2,10 +2,6 @@ package commons.serviceportal.helpers
 
 import commons.serviceportal.ServiceportalInformationGetter
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
-import org.activiti.engine.delegate.DelegateExecution
-import org.activiti.engine.impl.context.Context
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 /**
  * Since all log messages in the serviceportal need to follow certain guidelines, this helper class
@@ -15,6 +11,18 @@ import org.slf4j.LoggerFactory
  */
 class ServiceportalLogger {
 
+  private ScriptingApiV1 scriptingApiV1
+
+  /**
+   * Creates a new instance of ServiceportalLogger.
+   *
+   * @param api the scripting API (as read from the automatically set process instance variabel `apiV1`).
+   */
+  ServiceportalLogger(ScriptingApiV1 scriptingApiV1)
+  {
+    this.scriptingApiV1 = scriptingApiV1
+  }
+
   /**
    * Use this severity for general log messages.
    *
@@ -23,8 +31,8 @@ class ServiceportalLogger {
    *
    * @param msg The message to log
    */
-  static void log(String msg) {
-    getLogger().info(msg)
+  void log(String msg) {
+    scriptingApiV1.logger.info(msg)
   }
 
   /**
@@ -37,8 +45,8 @@ class ServiceportalLogger {
    *
    * @param msg The message to log
    */
-  static void logDebug(String msg) {
-    getLogger().info("[DEBUG] $msg")
+  void logDebug(String msg) {
+    scriptingApiV1.logger.info("[DEBUG] $msg")
   }
 
   /**
@@ -47,8 +55,8 @@ class ServiceportalLogger {
    *
    * @param msg The message to log
    */
-  static void logWarn(String msg) {
-    getLogger().warn(msg)
+  void logWarn(String msg) {
+    scriptingApiV1.logger.warn(msg)
   }
 
   /**
@@ -59,7 +67,7 @@ class ServiceportalLogger {
    * @param msg The message to log
    * @param scriptingApiVi The scripting API object for information about host
    */
-  static void logPersonalDataSecurely(String msg, ScriptingApiV1 scriptingApiV1) {
+  void logPersonalDataSecurely(String msg) {
     boolean canLogPersonalData = false // To begin, assume we must not log personal data
 
     if (ServiceportalInformationGetter.developmentInstances.contains(ServiceportalInformationGetter.getThisInstance(scriptingApiV1))) {
@@ -87,24 +95,7 @@ class ServiceportalLogger {
    * @param msg The message to log
    */
   @Deprecated()
-  static void logError(String msg) {
-    getLogger().warn("[ERROR] $msg")
-  }
-
-  private static Logger getLogger() {
-    String nameOfProcess
-    try {
-      DelegateExecution execution = Context?.getExecutionContext()?.getExecution()
-      nameOfProcess = execution?.getProcessDefinitionId()
-      // usually something like "m6000357.debugstadtMusterprozess:1:432568"
-    } catch (EmptyStackException ignored) {
-      // Expected when run in a test suite / IDE (i.e. when NOT in the context of a "serviceportal" instance)
-      nameOfProcess = "DOES_NOT_MATTER"
-    }
-    assert nameOfProcess != null: "Failed to determine name of process."
-    assert nameOfProcess != "": "Failed to determine name of process."
-
-    Logger logger = LoggerFactory.getLogger("de.seitenbau.serviceportal.prozess.$nameOfProcess".toString())
-    return logger
+  void logError(String msg) {
+    scriptingApiV1.logger.warn("[ERROR] $msg")
   }
 }

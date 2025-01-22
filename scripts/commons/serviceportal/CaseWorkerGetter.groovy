@@ -1,10 +1,9 @@
 package commons.serviceportal
 
+import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.message.NachrichtAbsenderV1
 import de.seitenbau.serviceportal.scripting.api.v1.process.ProcessOrganisationseinheitExtendedV1
 import de.seitenbau.serviceportal.scripting.api.v1.process.ProcessOrganisationseinheitKommunikationV1
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 class CaseWorkerGetter {
 
@@ -17,14 +16,15 @@ class CaseWorkerGetter {
    * @param printLogMessages Set to false to prevent a log message from being printed. Otherwise a single log message
    * on the INFO level will be printed that displays how the case worker was determined.
    *
+   * @param api the scripting API (as read from the automatically set process instance variabel `apiV1`).
+   *
    * @return the assigned caseworker as a 'NachrichtAbsenderV1' so it can be used as a sender for
    * 'Servicekontonachrichten'
    *
    * @throws CouldNotDetermineCaseWorkerException when no case worker could be determined. The exceptions message
    * contains more details about the reason.
    */
-  static NachrichtAbsenderV1 getAssignedCaseWorkerAsSender(List<ProcessOrganisationseinheitExtendedV1> assignedOrgUnits, boolean printLogMessages = true) throws CouldNotDetermineCaseWorkerException {
-    Logger logger = LoggerFactory.getLogger("de.seitenbau.serviceportal.prozess.publicserviceteam.commonssubmodule.caseworkergetter")
+  static NachrichtAbsenderV1 getAssignedCaseWorkerAsSender(List<ProcessOrganisationseinheitExtendedV1> assignedOrgUnits, ScriptingApiV1 api, boolean printLogMessages = true) throws CouldNotDetermineCaseWorkerException {
     List<String> detectedServicekontoIds = []
     String logMessage = "Determining case worker...\n"
     String assignedCaseworkerName = ""
@@ -82,7 +82,7 @@ class CaseWorkerGetter {
 
     // Ensure there are results
     if (detectedServicekontoIds.size() < 1) {
-      if (printLogMessages) logger.info(logMessage)
+      if (printLogMessages) api.logger.info(logMessage)
       throw new CouldNotDetermineCaseWorkerException("Failed to determine assigned case worker. No fitting " +
               "Servicekonto-ID could be determined. Please ensure that at least one assigned org unit has a " +
               "\"Kommunikation\" setting with a valid Servicekonto-ID.")
@@ -90,7 +90,7 @@ class CaseWorkerGetter {
 
     // Ensure only a single result
     if (detectedServicekontoIds.size() > 1) {
-      if (printLogMessages) logger.info(logMessage)
+      if (printLogMessages) api.logger.info(logMessage)
       throw new CouldNotDetermineCaseWorkerException("Failed to determine assigned case worker. There are multiple " +
               "Servicekonto-IDs that could be considered a valid case worker. Please ensure that only a single ID is " +
               "valid, for example by setting a assigned org unit to 'beratend tätig'.")
@@ -102,7 +102,7 @@ class CaseWorkerGetter {
             .servicekontoId(Long.parseLong(senderId))
             .build()
     logMessage += "Determining assigned case worker succesfull. Result is Servicekonto '$senderId'."
-    if (printLogMessages) logger.info(logMessage)
+    if (printLogMessages) api.logger.info(logMessage)
     return sender
   }
 
@@ -112,11 +112,13 @@ class CaseWorkerGetter {
    * @param assignedOrgUnits the result of the ZustaendigeOrganisationseinheitErmittelnService service task.
    * See https://doku.pmp.seitenbau.com/x/ZAYG for more details
    *
+   * @param api the scripting API (as read from the automatically set process instance variabel `apiV1`).
+   *
    * @return The 'Servicekonto-ID' aka. 'IDP-ID' for the given list.
    * Not including the "userId:" part.
    */
-  static String getAssignedCaseWorker(List<ProcessOrganisationseinheitExtendedV1> assignedOrgUnits) {
-    NachrichtAbsenderV1 sender = getAssignedCaseWorkerAsSender(assignedOrgUnits)
+  static String getAssignedCaseWorker(List<ProcessOrganisationseinheitExtendedV1> assignedOrgUnits, ScriptingApiV1 api) {
+    NachrichtAbsenderV1 sender = getAssignedCaseWorkerAsSender(assignedOrgUnits, api)
     return sender.servicekontoId.toString()
   }
 }

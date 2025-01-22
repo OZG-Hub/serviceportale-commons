@@ -1,7 +1,6 @@
 //file:noinspection UnnecessaryQualifiedReference - do NOT import org.apache.commons.text.StringEscapeUtils, as it cause duplicate imports of StringEscapeUtils by the gradle build plugin. See SBW-25576.
 package commons.serviceportal.forms
 
-import commons.serviceportal.helpers.ServiceportalLogger
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.*
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryContentV1
@@ -396,7 +395,7 @@ class FormDumper {
    */
   @SuppressWarnings('GrDeprecatedAPIUsage')
   // We need to support deprecated form field types as they might still be in use by older forms
-  private static String renderFieldForUserOutput(FormFieldV1 field) {
+  private String renderFieldForUserOutput(FormFieldV1 field) {
     if (field.value == null || field.value.toString().isAllWhitespace()) {
       return "[Keine Eingabe]"
     } else {
@@ -490,7 +489,7 @@ class FormDumper {
           BinaryGDIKMapContentV1 value = field.value as BinaryGDIKMapContentV1
           return "Nutzereingaben: '${value.json}', Auswahl von Elementen auf der Karte: '${value.selectionJson}'"
         default:
-          ServiceportalLogger.logWarn("FormDumper.renderFieldForUserOutput does not know how to display this field '${field.type}' (${field.type.class.name}), " + "so it defaults to toString().")
+          api.logger.warn("FormDumper.renderFieldForUserOutput does not know how to display this field '${field.type}' (${field.type.class.name}), " + "so it defaults to toString().")
           return field.value.toString()
           break
       }
@@ -499,7 +498,7 @@ class FormDumper {
     throw new RuntimeException("Unexpected field type '${field.type}'. " + "The FormDumper class does not know how to render that.")
   }
 
-  private static String renderFieldForXmlOutput(FormFieldV1 field) {
+  private String renderFieldForXmlOutput(FormFieldV1 field) {
     def value = field.value
 
     if (value == null) {
@@ -543,7 +542,7 @@ class FormDumper {
         // JSON format is not predictable (see https://serviceportal-community.de/153, so just output the JSON as-is)
         return XmlUtil.escapeXml((value as BinaryGeoMapContentV1).json)
       default:
-        ServiceportalLogger.logWarn("FormDumper.dumpAsFlatXml does not know how to display this class '${value.class}', " + "so it defaults to toString()")
+        api.logger.warn("FormDumper.dumpAsFlatXml does not know how to display this class '${value.class}', " + "so it defaults to toString()")
         return value.toString()
     }
   }
