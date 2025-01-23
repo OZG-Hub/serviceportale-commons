@@ -2,10 +2,6 @@ package commons.serviceportal.helpers
 
 import commons.serviceportal.ServiceportalInformationGetter
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
-import org.activiti.engine.delegate.DelegateExecution
-import org.activiti.engine.impl.context.Context
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 /**
  * Since all log messages in the serviceportal need to follow certain guidelines, this helper class
@@ -15,6 +11,18 @@ import org.slf4j.LoggerFactory
  */
 class ServiceportalLogger {
 
+  private ScriptingApiV1 scriptingApiV1
+
+  /**
+   * Creates a new instance of ServiceportalLogger.
+   *
+   * @param api the scripting API (as read from the automatically set process instance variabel `apiV1`).
+   */
+  ServiceportalLogger(ScriptingApiV1 scriptingApiV1)
+  {
+    this.scriptingApiV1 = scriptingApiV1
+  }
+
   /**
    * Use this severity for general log messages.
    *
@@ -22,9 +30,12 @@ class ServiceportalLogger {
    * correct level for all general log messages.
    *
    * @param msg The message to log
+   *
+   * @deprecated use the api method apiV1.logger.info(msg) instead
    */
-  static void log(String msg) {
-    getLogger().info(msg)
+  @Deprecated
+  void log(String msg) {
+    scriptingApiV1.logger.info(msg)
   }
 
   /**
@@ -36,9 +47,12 @@ class ServiceportalLogger {
    * Note that a finished process should no longer include any debug messages!
    *
    * @param msg The message to log
+   *
+   * @deprecated use the api method apiV1.logger.info("[DEBUG] " + msg) instead
    */
-  static void logDebug(String msg) {
-    getLogger().info("[DEBUG] $msg")
+  @Deprecated
+  void logDebug(String msg) {
+    scriptingApiV1.logger.info("[DEBUG] $msg")
   }
 
   /**
@@ -46,9 +60,12 @@ class ServiceportalLogger {
    * include invalid / faulty data that was fixed automatically.
    *
    * @param msg The message to log
+   *
+   * @deprecated use the api method apiV1.logger.warn(msg) instead
    */
-  static void logWarn(String msg) {
-    getLogger().warn(msg)
+  @Deprecated
+  void logWarn(String msg) {
+    scriptingApiV1.logger.warn(msg)
   }
 
   /**
@@ -59,7 +76,7 @@ class ServiceportalLogger {
    * @param msg The message to log
    * @param scriptingApiVi The scripting API object for information about host
    */
-  static void logPersonalDataSecurely(String msg, ScriptingApiV1 scriptingApiV1) {
+  void logPersonalDataSecurely(String msg) {
     boolean canLogPersonalData = false // To begin, assume we must not log personal data
 
     if (ServiceportalInformationGetter.developmentInstances.contains(ServiceportalInformationGetter.getThisInstance(scriptingApiV1))) {
@@ -79,6 +96,7 @@ class ServiceportalLogger {
    * @deprecated
    * You should prefer throwing an exception as that would stop execution and also shows up in the
    * log viewer
+   * Anyway, use the api method apiV1.logger.warn("[ERROR] " + msg) instead
    *
    * Note that this does not actually log on the "error" level, as it is not acceptable for process
    * certification. Instead this method logs on the "warn" level and prepends "[ERROR] " to the
@@ -86,25 +104,8 @@ class ServiceportalLogger {
    *
    * @param msg The message to log
    */
-  @Deprecated()
-  static void logError(String msg) {
-    getLogger().warn("[ERROR] $msg")
-  }
-
-  private static Logger getLogger() {
-    String nameOfProcess
-    try {
-      DelegateExecution execution = Context?.getExecutionContext()?.getExecution()
-      nameOfProcess = execution?.getProcessDefinitionId()
-      // usually something like "m6000357.debugstadtMusterprozess:1:432568"
-    } catch (EmptyStackException ignored) {
-      // Expected when run in a test suite / IDE (i.e. when NOT in the context of a "serviceportal" instance)
-      nameOfProcess = "DOES_NOT_MATTER"
-    }
-    assert nameOfProcess != null: "Failed to determine name of process."
-    assert nameOfProcess != "": "Failed to determine name of process."
-
-    Logger logger = LoggerFactory.getLogger("de.seitenbau.serviceportal.prozess.$nameOfProcess".toString())
-    return logger
+  @Deprecated
+  void logError(String msg) {
+    scriptingApiV1.logger.warn("[ERROR] $msg")
   }
 }

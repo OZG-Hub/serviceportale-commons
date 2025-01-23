@@ -1,6 +1,7 @@
 package commons.serviceportal
 
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
+import de.seitenbau.serviceportal.scripting.api.v1.LoggerApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.start.OrganisationseinheitAnschriftParameterV1
 import de.seitenbau.serviceportal.scripting.api.v1.start.OrganisationseinheitKontaktParameterV1
 import de.seitenbau.serviceportal.scripting.api.v1.start.OrganisationseinheitParameterV1
@@ -11,6 +12,7 @@ class SupportContactDataGetterSpecification extends Specification {
   def "get support contact for a missing org unit"() {
     given:
     ScriptingApiV1 mockedApi = Mock()
+    mockedApi.logger >> Mock(LoggerApiV1)
     StartParameterV1 mockedStartParameters = Mock()
 
     mockedApi.getVariable("startParameter", StartParameterV1) >> mockedStartParameters
@@ -33,6 +35,7 @@ class SupportContactDataGetterSpecification extends Specification {
     String city = "Musterhausen"
 
     ScriptingApiV1 mockedApi = Mock()
+    mockedApi.logger >> Mock(LoggerApiV1)
     StartParameterV1 mockedStartParameters = Mock()
     OrganisationseinheitParameterV1 mockedOrgUnit = Mock()
     OrganisationseinheitKontaktParameterV1 mockedContact = Mock()

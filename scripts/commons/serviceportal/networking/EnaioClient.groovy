@@ -1,7 +1,7 @@
 package commons.serviceportal.networking
 
 import commons.serviceportal.ServiceportalInformationGetter
-import commons.serviceportal.helpers.ServiceportalLogger
+import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
 import groovy.json.JsonGenerator
 import groovy.json.JsonOutput
 
@@ -10,6 +10,7 @@ class EnaioClient {
   final boolean useProxy
   final String username
   final String password
+  final ScriptingApiV1 api
 
   /**
    * A unique String to separate different parts of the HTTP request
@@ -29,17 +30,21 @@ class EnaioClient {
    *   The username to use for HTTP BasicAuth. Can be <code>null</code> if no auth should be used.
    * @param password
    *   The password to use for HTTP BasicAuth. Required if <code>username</code> is set to something other than null.
+   * @param api
+   *   The scripting API (as read from the automatically set process instance variabel `apiV1`).
    */
-  EnaioClient(String baseUrl, boolean useProxy, String username, String password) {
+  EnaioClient(String baseUrl, boolean useProxy, String username, String password, ScriptingApiV1 api) {
     this.baseUrl = baseUrl
     this.useProxy = useProxy
     this.username = username
     this.password = password
+    this.api = api
 
     assert baseUrl != null: "[EnaioClient] baseUrl parameter is required, but was null"
     if (username != null) {
       assert password != null: "[EnaioClient] When username is set, password cannot be null."
     }
+    assert api != null: "[EnaioClient] api parameter is required, but was null"
   }
 
   /**
@@ -142,7 +147,7 @@ class EnaioClient {
     int responseCode = conn.getResponseCode()
     if (responseCode == 200) {
       String answer = conn.inputStream.text
-      ServiceportalLogger.log("[EnaioClient] Document successfully inserted. Endpoint answer is '$answer'")
+      api.logger.info("[EnaioClient] Document successfully inserted. Endpoint answer is '$answer'")
       return Integer.parseInt(answer)
     } else {
       throw new Exception("Could not create new ENAIO document.\n" +
