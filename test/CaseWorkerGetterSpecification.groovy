@@ -36,7 +36,6 @@ class CaseWorkerGetterSpecification extends Specification {
       return oe
     }
     List<ProcessOrganisationseinheitExtendedV1> assignedOrgUnits = [processOeExtended]
-    def arguments
 
     when:
     String caseWorker = CaseWorkerGetter.getAssignedCaseWorker(assignedOrgUnits, mockedApi)
