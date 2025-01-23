@@ -30,7 +30,10 @@ class ServiceportalLogger {
    * correct level for all general log messages.
    *
    * @param msg The message to log
+   *
+   * @deprecated use the api method apiV1.logger.info(msg) instead
    */
+  @Deprecated
   void log(String msg) {
     scriptingApiV1.logger.info(msg)
   }
@@ -44,7 +47,10 @@ class ServiceportalLogger {
    * Note that a finished process should no longer include any debug messages!
    *
    * @param msg The message to log
+   *
+   * @deprecated use the api method apiV1.logger.info("[DEBUG] " + msg) instead
    */
+  @Deprecated
   void logDebug(String msg) {
     scriptingApiV1.logger.info("[DEBUG] $msg")
   }
@@ -54,7 +60,10 @@ class ServiceportalLogger {
    * include invalid / faulty data that was fixed automatically.
    *
    * @param msg The message to log
+   *
+   * @deprecated use the api method apiV1.logger.warn(msg) instead
    */
+  @Deprecated
   void logWarn(String msg) {
     scriptingApiV1.logger.warn(msg)
   }
@@ -87,6 +96,7 @@ class ServiceportalLogger {
    * @deprecated
    * You should prefer throwing an exception as that would stop execution and also shows up in the
    * log viewer
+   * Anyway, use the api method apiV1.logger.warn("[ERROR] " + msg) instead
    *
    * Note that this does not actually log on the "error" level, as it is not acceptable for process
    * certification. Instead this method logs on the "warn" level and prepends "[ERROR] " to the
@@ -94,7 +104,7 @@ class ServiceportalLogger {
    *
    * @param msg The message to log
    */
-  @Deprecated()
+  @Deprecated
   void logError(String msg) {
     scriptingApiV1.logger.warn("[ERROR] $msg")
   }
