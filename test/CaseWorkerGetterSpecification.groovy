@@ -9,10 +9,17 @@ import de.seitenbau.serviceportal.scripting.api.v1.process.ProcessOrganisationse
 import spock.lang.Specification
 
 class CaseWorkerGetterSpecification extends Specification {
+
+  private ScriptingApiV1 mockedApi
+
+  def setup()
+  {
+    mockedApi = Mock()
+    mockedApi.logger >> Mock(LoggerApiV1)
+  }
+
   def "get assigned case worker for valid entry"() {
     given:
-    ScriptingApiV1 mockedApi = Mock()
-    mockedApi.logger >> Mock(LoggerApiV1)
     String expectedCaseWorkerId = "12345"
 
     ProcessOrganisationseinheitExtendedV1 processOeExtended = Mock()
@@ -29,18 +36,21 @@ class CaseWorkerGetterSpecification extends Specification {
       return oe
     }
     List<ProcessOrganisationseinheitExtendedV1> assignedOrgUnits = [processOeExtended]
+    def arguments
 
     when:
     String caseWorker = CaseWorkerGetter.getAssignedCaseWorker(assignedOrgUnits, mockedApi)
 
     then:
     caseWorker == expectedCaseWorkerId
+    1 * mockedApi.logger.info('Determining case worker...\nCandidate orgUnits are: \'Musterorganisationseinheit\' (ID: null)\nChecking orgUnit \'null\'\n  Ausprägung is ok.\n  Checking "Kommunikation" of orgUnit...\n    Kommunikation to Servicekonto \'12345\' found.\nDetermining assigned case worker succesfull. Result is Servicekonto \'12345\'.')
+    0 * mockedApi.logger.info(_ as String, _ as Exception)
+    0 * mockedApi.logger.warn(_ as String)
+    0 * mockedApi.logger.warn(_ as String, _ as Exception)
   }
 
   def "get assigned case worker for not-servicekonto kommunikation"() {
     given:
-    ScriptingApiV1 mockedApi = Mock()
-    mockedApi.logger >> Mock(LoggerApiV1)
     ProcessOrganisationseinheitExtendedV1 processOeExtended = Mock()
     processOeExtended.aufgabengebiet >> "KEINE"
     processOeExtended.oe >> {
@@ -62,12 +72,14 @@ class CaseWorkerGetterSpecification extends Specification {
     then:
     CouldNotDetermineCaseWorkerException exception = thrown(CouldNotDetermineCaseWorkerException)
     exception.message.contains("No fitting Servicekonto-ID could be determined")
+    1 * mockedApi.logger.info('Determining case worker...\nCandidate orgUnits are: \'Musterorganisationseinheit\' (ID: null)\nChecking orgUnit \'null\'\n  Ausprägung is ok.\n  Checking "Kommunikation" of orgUnit...\n    No "Kommunikation" with kanal \'SERVICEKONTO\' found.\n')
+    0 * mockedApi.logger.info(_ as String, _ as Exception)
+    0 * mockedApi.logger.warn(_ as String)
+    0 * mockedApi.logger.warn(_ as String, _ as Exception)
   }
 
   def "get assigned case worker for missing kommunikation"() {
     given:
-    ScriptingApiV1 mockedApi = Mock()
-    mockedApi.logger >> Mock(LoggerApiV1)
     ProcessOrganisationseinheitExtendedV1 processOeExtended = Mock()
     processOeExtended.aufgabengebiet >> "KEINE"
     processOeExtended.oe >> {
@@ -84,6 +96,10 @@ class CaseWorkerGetterSpecification extends Specification {
     then:
     CouldNotDetermineCaseWorkerException exception = thrown(CouldNotDetermineCaseWorkerException)
     exception.message.contains("No fitting Servicekonto-ID could be determined")
+    1 * mockedApi.logger.info('Determining case worker...\nCandidate orgUnits are: \'Musterorganisationseinheit\' (ID: null)\nChecking orgUnit \'null\'\n  Ausprägung is ok.\n  Checking "Kommunikation" of orgUnit...\n    No "Kommunikation" with kanal \'SERVICEKONTO\' found.\n')
+    0 * mockedApi.logger.info(_ as String, _ as Exception)
+    0 * mockedApi.logger.warn(_ as String)
+    0 * mockedApi.logger.warn(_ as String, _ as Exception)
   }
 
   Set<ProcessOrganisationseinheitI18nV1> getMockedI18n() {
