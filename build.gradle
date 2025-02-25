@@ -12,10 +12,9 @@ String serviceportalPublicApiVersion = "1.182.4"
 dependencies {
   [
           'org.codehaus.groovy:groovy-all:2.5.22',
-
           "de.seitenbau.serviceportal:prozess-scripting-api:${serviceportalPublicApiVersion}",
-
           "org.activiti:activiti-engine:5.22.0",
+          "org.apache.commons:commons-text:1.13.0"
 
   ].each { dep ->
     implementation(dep) {
