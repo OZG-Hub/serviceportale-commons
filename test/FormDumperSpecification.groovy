@@ -9,6 +9,7 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.FormSectionV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FormV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.PossibleValueListV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.PossibleValueV1
+import de.seitenbau.serviceportal.scripting.api.v1.form.VerifiedFormFieldValueV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormFieldContentV1
@@ -19,7 +20,9 @@ import java.text.SimpleDateFormat
 import commons.serviceportal.forms.FormDumper
 
 class FormDumperSpecification extends Specification {
-  static private ScriptingApiV1 mockedApi
+
+  public static final String MAIN_GROUP_ID = "mainGroupId"
+  private static ScriptingApiV1 mockedApi
 
   void addFieldToInstance(FieldGroupInstanceV1 groupInstance, String fieldId, FieldTypeV1 type, String label)
   {
@@ -32,7 +35,7 @@ class FormDumperSpecification extends Specification {
   FormV1 createEmptyForm()
   {
     FormV1 form = new FormV1("6000357:testform:v1.0")
-    FieldGroupV1 fieldGroup = new FieldGroupV1("mainGroupId")
+    FieldGroupV1 fieldGroup = new FieldGroupV1(MAIN_GROUP_ID)
     FormSectionV1 section = FormSectionV1.builder().fieldGroups([fieldGroup]).build()
     form.getSections().add(section)
     return form
@@ -44,7 +47,7 @@ class FormDumperSpecification extends Specification {
 
     // Mock form
     FormV1 form = createEmptyForm()
-    FieldGroupInstanceV1 fieldGroupInstance = form.getGroupInstance("mainGroupId", 0)
+    FieldGroupInstanceV1 fieldGroupInstance = form.getGroupInstance(MAIN_GROUP_ID, 0)
     fieldGroupInstance.setTitle("Main Group")
     addFieldToInstance(fieldGroupInstance, "textanzeige", FieldTypeV1.TEXT, "Textanzeige")
     addFieldToInstance(fieldGroupInstance, "time", FieldTypeV1.TIME, "Time")
@@ -196,7 +199,7 @@ class FormDumperSpecification extends Specification {
     ScriptingApiV1 mockedApi = Mock(ScriptingApiV1)
     FormV1 form = createEmptyForm()
     mockedApi.getForm("6000357:testform:v1.0") >> form
-    addFieldToInstance(form.getGroupInstance("mainGroupId", 0), "123illegalNameForXmlNode", FieldTypeV1.STRING, null)
+    addFieldToInstance(form.getGroupInstance(MAIN_GROUP_ID, 0), "123illegalNameForXmlNode", FieldTypeV1.STRING, null)
 
     when:
     FormDumper dumper = new FormDumper(formContent, mockedApi)
@@ -218,6 +221,28 @@ class FormDumperSpecification extends Specification {
 
     then:
     def expectedHtml = new File('test/resources/expected.html').text.replaceAll("\n *<", "<")
+    html == expectedHtml
+  }
+
+  def "dumping a form to HTML Table vith VerifiedFormFieldValueV1 values"() {
+    given:
+    FormContentV1 formContent = new FormContentV1("6000357:testform:v1.0")
+    formContent.fields.put(
+        MAIN_GROUP_ID + ":0:textfield",
+        FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1("textfieldContent", "DummyVerificationToken")).build())
+    formContent.fields.put(
+            MAIN_GROUP_ID + ":0:textarea",
+            FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1("textareaContent", "DummyVerificationToken")).build())
+    formContent.fields.put(
+        MAIN_GROUP_ID + ":0:date",
+        FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1(new GregorianCalendar(2015, Calendar.JULY, 8).time, "DummyVerificationToken")).build())
+
+    when:
+    FormDumper dumper = new FormDumper(formContent, mockedApi)
+    String html = dumper.dumpFormAsHtmlTable()
+
+    then:
+    def expectedHtml = new File('test/resources/expected_verifiedFormFieldValue.html').text.replaceAll("\n *<", "<")
     html == expectedHtml
   }
 }
