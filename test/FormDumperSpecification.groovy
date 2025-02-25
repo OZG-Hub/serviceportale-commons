@@ -41,7 +41,7 @@ class FormDumperSpecification extends Specification {
     return form
   }
 
-  def setupSpec() {
+  def setup() {
     // Mock scripting API
     mockedApi = Mock(ScriptingApiV1)
 
@@ -243,6 +243,28 @@ class FormDumperSpecification extends Specification {
 
     then:
     def expectedHtml = new File('test/resources/expected_verifiedFormFieldValue.html').text.replaceAll("\n *<", "<")
+    html == expectedHtml
+  }
+
+  def "dumping a form to HTML Table vith VerifiedFormFieldValueV1 null values"() {
+    given:
+    FormContentV1 formContent = new FormContentV1("6000357:testform:v1.0")
+    formContent.fields.put(
+            MAIN_GROUP_ID + ":0:textfield",
+            FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1(null, "DummyVerificationToken")).build())
+    formContent.fields.put(
+            MAIN_GROUP_ID + ":0:textarea",
+            FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1(null, "DummyVerificationToken")).build())
+    formContent.fields.put(
+            MAIN_GROUP_ID + ":0:date",
+            FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1(null, "DummyVerificationToken")).build())
+
+    when:
+    FormDumper dumper = new FormDumper(formContent, mockedApi)
+    String html = dumper.dumpFormAsHtmlTable()
+
+    then:
+    def expectedHtml = new File('test/resources/expected_verifiedFormFieldValue_nullValues.html').text.replaceAll("\n *<", "<")
     html == expectedHtml
   }
 }
