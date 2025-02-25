@@ -1,5 +1,6 @@
 package commons.serviceportal.forms
 
+import de.seitenbau.serviceportal.scripting.api.v1.form.PossibleValueV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormFieldContentV1
@@ -61,8 +62,17 @@ class JsonToFormContentConverter {
               formFieldContentMap.value = bc
             }
 
-            // formFieldContentMap is a LazyMap (from JSON)! We need to explicitly convert it to a FormFieldContent
-            FormFieldContentV1 formFieldContent = new FormFieldContentV1(formFieldContentMap.value, formFieldContentMap.validationMessages, formFieldContentMap.possibleValues)
+            // formFieldContentMap and possibleValues are LazyMaps (from JSON)!
+            // We need to explicitly convert them to the correct class
+            List<PossibleValueV1> possibleValues = null;
+            if (formFieldContentMap.possibleValues != null)
+            {
+              possibleValues = new ArrayList<>();
+              formFieldContentMap.possibleValues.each {
+                possibleValues.add(PossibleValueV1.builder().label(it.label).value(it.value).build())
+              }
+            }
+            FormFieldContentV1 formFieldContent = new FormFieldContentV1(formFieldContentMap.value, formFieldContentMap.validationMessages, possibleValues)
             formContent.fields.put(fieldKey, formFieldContent)
           }
           break

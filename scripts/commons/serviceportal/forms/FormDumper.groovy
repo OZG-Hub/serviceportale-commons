@@ -451,10 +451,10 @@ class FormDumper {
           } else {
             date = field.value as Date
           }
-          return date.format("dd.MM.yyyy")
+          return new SimpleDateFormat("dd.MM.yyyy").format(date)
           break
         case FieldTypeV1.TIME:
-          return (field.value as Date).format("HH:mm")
+          return new SimpleDateFormat("HH:mm").format(field.value as Date)
           break
         case FieldTypeV1.EURO_BETRAG:
           return (field.value as BigDecimal).toString() + " €"
