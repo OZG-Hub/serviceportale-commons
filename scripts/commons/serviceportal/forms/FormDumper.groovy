@@ -396,7 +396,12 @@ class FormDumper {
   @SuppressWarnings('GrDeprecatedAPIUsage')
   // We need to support deprecated form field types as they might still be in use by older forms
   private String renderFieldForUserOutput(FormFieldV1 field) {
-    if (field.value == null || field.value.toString().isAllWhitespace()) {
+    Object value = field.value
+    if (value instanceof VerifiedFormFieldValueV1)
+    {
+      value = ((VerifiedFormFieldValueV1) value).value
+    }
+    if (value == null || value.toString().isAllWhitespace()) {
       return "[Keine Eingabe]"
     } else {
       //noinspection GroovyFallthrough - those fall-throughs are on purpose.
@@ -408,14 +413,10 @@ class FormDumper {
         case FieldTypeV1.KFZ_KENNZEICHEN:
           // fall through
         case FieldTypeV1.TEXTAREA:
-          if (field.value.class == VerifiedFormFieldValueV1) {
-            return (field.value as VerifiedFormFieldValueV1).value
-          } else {
-            return field.value
-          }
+          return value
           break
         case FieldTypeV1.FILE:
-          return "Datei: \"${(field.value as BinaryContentV1).uploadedFilename}\""
+          return "Datei: \"${(value as BinaryContentV1).uploadedFilename}\""
           break
         case FieldTypeV1.MULTIPLE_FILE:
           return getFilenamesFromMultipleUpload(field)
@@ -423,44 +424,36 @@ class FormDumper {
         case FieldTypeV1.BOOLEAN:
           // fall though
         case FieldTypeV1.SINGLE_CHECKBOX:
-          return field.value ? "Ja" : "Nein"
+          return value ? "Ja" : "Nein"
           break
         case FieldTypeV1.CHECKBOX:
-          return generateCommaSeparatedListOfPossibleValueLabel(field.value as ArrayList<String>, field.possibleValues)
+          return generateCommaSeparatedListOfPossibleValueLabel(value as ArrayList<String>, field.possibleValues)
           break
         case FieldTypeV1.RADIO_BUTTONS:
-          return findLabelForPossibleValue(field.possibleValues, field.value as String)
+          return findLabelForPossibleValue(field.possibleValues, value as String)
           break
         case FieldTypeV1.DROPDOWN_SINGLE_SELECT:
           // fall-through
         case FieldTypeV1.DROPDOWN_SINGLE_SELECT_AJAX:
-          return findLabelForPossibleValue(field.possibleValues, field.value as String)
+          return findLabelForPossibleValue(field.possibleValues, value as String)
           break
         case FieldTypeV1.DROPDOWN_MULTIPLE_SELECT:
-          return generateCommaSeparatedListOfPossibleValueLabel(field.value as ArrayList<String>, field.possibleValues)
+          return generateCommaSeparatedListOfPossibleValueLabel(value as ArrayList<String>, field.possibleValues)
           break
         case FieldTypeV1.TWO_LIST_SELECT:
-          return generateCommaSeparatedListOfPossibleValueLabel(field.value as ArrayList<String>, field.possibleValues)
+          return generateCommaSeparatedListOfPossibleValueLabel(value as ArrayList<String>, field.possibleValues)
           break
         case FieldTypeV1.DATE:
-          // Retrieving values via the "Vertrauensniveaus" returns Dates in VerifiedFormFieldValueV1 objects
-          Date date
-          if (field.value.class == VerifiedFormFieldValueV1) {
-            VerifiedFormFieldValueV1 verifiedValue = field.value as VerifiedFormFieldValueV1
-            date = verifiedValue.value as Date
-          } else {
-            date = field.value as Date
-          }
-          return date.format("dd.MM.yyyy")
+          return new SimpleDateFormat("dd.MM.yyyy").format(value as Date)
           break
         case FieldTypeV1.TIME:
-          return (field.value as Date).format("HH:mm")
+          return new SimpleDateFormat("HH:mm").format(value as Date)
           break
         case FieldTypeV1.EURO_BETRAG:
-          return (field.value as BigDecimal).toString() + " €"
+          return (value as BigDecimal).toString() + " €"
           break
         case FieldTypeV1.SUBMITTED_WITH_NPA_INFO:
-          return field.value ? "Sie waren mit dem neuem Personalausweis angemeldet" : "Sie waren NICHT mit dem neuem Personalausweis angemeldet"
+          return value ? "Sie waren mit dem neuem Personalausweis angemeldet" : "Sie waren NICHT mit dem neuem Personalausweis angemeldet"
           break
         case FieldTypeV1.TEXT:
           // fall through
@@ -482,15 +475,15 @@ class FormDumper {
           // Its difficult to represent as GeoMap field as a String, so we just output the attributes we get from the API.
           // Note that the methods calling renderFieldForUserOutput (like renderAsHtmlTable()) might have overridden and
           // more suitable behaviour than representing the GeoMap field as a String.
-          BinaryGeoMapContentV1 value = field.value as BinaryGeoMapContentV1
-          return "Nutzereingaben: '${value.json}', Auswahl von Elementen auf der Karte: '${value.selectionJson}'"
+          BinaryGeoMapContentV1 binaryGeoMapContentValue = field.value as BinaryGeoMapContentV1
+          return "Nutzereingaben: '${binaryGeoMapContentValue.json}', Auswahl von Elementen auf der Karte: '${binaryGeoMapContentValue.selectionJson}'"
         case FieldTypeV1.GDIK_MAP:
           // Similar to GEO_MAP, its difficult to represent GDIK_MAP as a String.
-          BinaryGDIKMapContentV1 value = field.value as BinaryGDIKMapContentV1
-          return "Nutzereingaben: '${value.json}', Auswahl von Elementen auf der Karte: '${value.selectionJson}'"
+          BinaryGDIKMapContentV1 binaryGDIKMapContentValue = field.value as BinaryGDIKMapContentV1
+          return "Nutzereingaben: '${binaryGDIKMapContentValue.json}', Auswahl von Elementen auf der Karte: '${binaryGDIKMapContentValue.selectionJson}'"
         default:
           api.logger.warn("FormDumper.renderFieldForUserOutput does not know how to display this field '${field.type}' (${field.type.class.name}), " + "so it defaults to toString().")
-          return field.value.toString()
+          return value.toString()
           break
       }
     }

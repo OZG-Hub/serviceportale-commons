@@ -1,11 +1,15 @@
 import commons.serviceportal.forms.JsonToFormContentConverter
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
+import de.seitenbau.serviceportal.scripting.api.v1.form.FieldGroupInstanceV1
+import de.seitenbau.serviceportal.scripting.api.v1.form.FieldGroupV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldTypeV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.FormFieldKeyV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FormFieldV1
+import de.seitenbau.serviceportal.scripting.api.v1.form.FormRowV1
+import de.seitenbau.serviceportal.scripting.api.v1.form.FormSectionV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FormV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.PossibleValueListV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.PossibleValueV1
+import de.seitenbau.serviceportal.scripting.api.v1.form.VerifiedFormFieldValueV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormFieldContentV1
@@ -16,118 +20,65 @@ import java.text.SimpleDateFormat
 import commons.serviceportal.forms.FormDumper
 
 class FormDumperSpecification extends Specification {
-  static private ScriptingApiV1 mockedApi
 
-  def setupSpec() {
+  public static final String MAIN_GROUP_ID = "mainGroupId"
+  private static ScriptingApiV1 mockedApi
+
+  void addFieldToInstance(FieldGroupInstanceV1 groupInstance, String fieldId, FieldTypeV1 type, String label)
+  {
+    FormFieldV1 field = new FormFieldV1(fieldId, type)
+    field.setLabel(label)
+    FormRowV1 row = FormRowV1.builder().fields([field]).build()
+    groupInstance.getRows().add(row)
+  }
+
+  FormV1 createEmptyForm()
+  {
+    FormV1 form = new FormV1("6000357:testform:v1.0")
+    FieldGroupV1 fieldGroup = new FieldGroupV1(MAIN_GROUP_ID)
+    FormSectionV1 section = FormSectionV1.builder().fieldGroups([fieldGroup]).build()
+    form.getSections().add(section)
+    return form
+  }
+
+  def setup() {
     // Mock scripting API
     mockedApi = Mock(ScriptingApiV1)
 
     // Mock form
-    def uncastMockedForm = Mock(FormV1, constructorArgs: ["formIdDoesNotMatter"])
-    assert uncastMockedForm instanceof FormV1
-    FormV1 mockedForm = uncastMockedForm
-    mockedApi.getForm(_ as String) >> mockedForm
+    FormV1 form = createEmptyForm()
+    FieldGroupInstanceV1 fieldGroupInstance = form.getGroupInstance(MAIN_GROUP_ID, 0)
+    fieldGroupInstance.setTitle("Main Group")
+    addFieldToInstance(fieldGroupInstance, "textanzeige", FieldTypeV1.TEXT, "Textanzeige")
+    addFieldToInstance(fieldGroupInstance, "time", FieldTypeV1.TIME, "Time")
+    addFieldToInstance(fieldGroupInstance, "yesno", FieldTypeV1.BOOLEAN, "Yes/No")
+    addFieldToInstance(fieldGroupInstance, "npa", FieldTypeV1.SUBMITTED_WITH_NPA_INFO, "NPA")
+    addFieldToInstance(fieldGroupInstance, "textfield", FieldTypeV1.STRING, "Textfield")
+    addFieldToInstance(fieldGroupInstance, "simpleCheckbox", FieldTypeV1.SINGLE_CHECKBOX, "Sinple Checkbox")
+    addFieldToInstance(fieldGroupInstance, "radioButtons", FieldTypeV1.RADIO_BUTTONS, "Radio Buttons")
+    addFieldToInstance(fieldGroupInstance, "textarea", FieldTypeV1.TEXTAREA, "Textarea")
+    addFieldToInstance(fieldGroupInstance, "multiselect", FieldTypeV1.DROPDOWN_MULTIPLE_SELECT, "Multiselect")
+    PossibleValueListV1 pvList = new PossibleValueListV1()
+    pvList.add(new PossibleValueV1("first label", "firstOption", null))
+    pvList.add(new PossibleValueV1("second label", "secondOption", null))
+    fieldGroupInstance.getField("multiselect").setPossibleValues(pvList)
+    addFieldToInstance(fieldGroupInstance, "checkboxList", FieldTypeV1.CHECKBOX, "Checkbox List")
+    fieldGroupInstance.getField("checkboxList").setPossibleValues(pvList)
+    BinaryContentV1 mockedBinaryContent = Mock(BinaryContentV1)
+    mockedBinaryContent.data >> "test content".getBytes("UTF-8")
+    mockedBinaryContent.mimetype >> "text/plain"
+    mockedBinaryContent.uploadedFilename >> "test.txt"
+    addFieldToInstance(fieldGroupInstance, "fileupload", FieldTypeV1.FILE, "Fileupload")
+    addFieldToInstance(fieldGroupInstance, "h2", FieldTypeV1.H2, "H2")
+    addFieldToInstance(fieldGroupInstance, "h1", FieldTypeV1.H1, "H1")
+    addFieldToInstance(fieldGroupInstance, "date", FieldTypeV1.DATE, "Date")
 
-    // Mock form fields
-    mockedForm.getFieldInInstance(_ as FormFieldKeyV1) >> { arguments ->
-      FormFieldKeyV1 fieldKey = arguments.first()
-      String fullKey = fieldKey.toString()
+    addFieldToInstance(fieldGroupInstance, "ca4618b9", FieldTypeV1.PLACEHOLDER, "Placeholder")
+    addFieldToInstance(fieldGroupInstance, "selectOptions", FieldTypeV1.DROPDOWN_SINGLE_SELECT, "SelectOptions")
+    fieldGroupInstance.getField("selectOptions").setPossibleValues(pvList)
+    addFieldToInstance(fieldGroupInstance, "money", FieldTypeV1.EURO_BETRAG, "Eurobetrag")
 
-      PossibleValueListV1 pvList = new PossibleValueListV1()
-      pvList.add(new PossibleValueV1("first label", "firstOption", null))
-      pvList.add(new PossibleValueV1("second label", "secondOption", null))
-
-      BinaryContentV1 mockedBinaryContent = Mock(BinaryContentV1)
-      mockedBinaryContent.data >> "test content".getBytes("UTF-8")
-      mockedBinaryContent.mimetype >> "text/plain"
-      mockedBinaryContent.uploadedFilename >> "test.txt"
-
-      FormFieldV1 field
-      switch (fieldKey.fieldId) {
-        case "textanzeige":
-          field = new FormFieldV1(fullKey, FieldTypeV1.TEXT)
-          field.value = null
-          break
-        case "time":
-          field = new FormFieldV1(fullKey, FieldTypeV1.TIME)
-          field.value = new GregorianCalendar(1970, 0, 1, 11, 55, 00).time
-          break
-        case "yesno":
-          field = new FormFieldV1(fullKey, FieldTypeV1.BOOLEAN)
-          field.value = true
-          break
-        case "npa":
-          field = new FormFieldV1(fullKey, FieldTypeV1.SUBMITTED_WITH_NPA_INFO)
-          field.value = false
-          break
-        case "exampleField":
-          //noinspection GroovyFallthrough - intentional. This should also be handled as a textbox type field
-        case "textfield":
-          field = new FormFieldV1(fullKey, FieldTypeV1.STRING)
-          field.value = "Example input"
-          break
-        case "simpleCheckbox":
-          field = new FormFieldV1(fullKey, FieldTypeV1.SINGLE_CHECKBOX)
-          field.value = true
-          break
-        case "radioButtons":
-          field = new FormFieldV1(fullKey, FieldTypeV1.RADIO_BUTTONS)
-          field.possibleValues = pvList
-          field.value = "firstOption"
-          break
-        case "textarea":
-          field = new FormFieldV1(fullKey, FieldTypeV1.TEXTAREA)
-          field.value = "Example\ninput"
-          break
-        case "mutliselect":
-          field = new FormFieldV1(fullKey, FieldTypeV1.DROPDOWN_MULTIPLE_SELECT)
-          field.possibleValues = pvList
-          field.value = ["firstOption"]
-          break
-        case "checkboxList":
-          field = new FormFieldV1(fullKey, FieldTypeV1.FILE)
-          field.possibleValues = pvList
-          field.value = ["firstOption"]
-          break
-        case "schubser":
-          field = new FormFieldV1(fullKey, FieldTypeV1.TWO_LIST_SELECT)
-          field.possibleValues = pvList
-          field.value = ["firstOption"]
-          break
-        case "fileupload":
-          field = new FormFieldV1(fullKey, FieldTypeV1.FILE)
-          field.value = mockedBinaryContent
-          break
-        case "h2":
-          field = new FormFieldV1(fullKey, FieldTypeV1.H2)
-          break
-        case "h1":
-          field = new FormFieldV1(fullKey, FieldTypeV1.H1)
-          break
-        case "date":
-          field = new FormFieldV1(fullKey, FieldTypeV1.TEXTAREA)
-          field.value = new GregorianCalendar(2015, Calendar.JULY, 8).time
-          break
-        case "123illegalNameForXmlNode":
-          //noinspection GroovyFallthrough - intentional. This should also be handled as a placeholder type field
-        case "ca4618b9":
-          field = new FormFieldV1(fullKey, FieldTypeV1.PLACEHOLDER)
-          break
-        case "selectOptions":
-          field = new FormFieldV1(fullKey, FieldTypeV1.DROPDOWN_SINGLE_SELECT)
-          field.possibleValues = pvList
-          field.value = "firstOption"
-          break
-        case "money":
-          field = new FormFieldV1(fullKey, FieldTypeV1.EURO_BETRAG)
-          field.value = new BigDecimal("12.34")
-          break
-        default:
-          throw new UnsupportedOperationException("Mocked field for key '$fieldKey' not implemented yet. Please " +
-                  "update FormDumperSpecification.")
-      }
-      return field
-    }
+    mockedApi.getForm("6000357:testform:v1.0") >> form
   }
 
   def "dumping a simple input to a csv"() {
@@ -203,67 +154,118 @@ class FormDumperSpecification extends Specification {
 
   def "dumping a form to XML"() {
     given:
-    final String FILENAME = "resources/formContent_allFields.json"
-    String json = getClass().getResourceAsStream(FILENAME).text
+    String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
     FormContentV1 formContent = JsonToFormContentConverter.convert(json)
 
     when:
     FormDumper dumper = new FormDumper(formContent, mockedApi)
     String xml = dumper.dumpAsXml()
     def parsed = new XmlSlurper().parseText(xml)
+    def parsedGroupInstance = parsed.mainGroupId.instance_0
 
     then:
-    parsed.mainGroupId.instance_0.textfield == "Example input"
-    parsed.mainGroupId.instance_0.textarea == "Example\ninput"
+    parsedGroupInstance.textfield == "Textfield content"
+    parsedGroupInstance.textarea == "Textarea\ncontent"
 
     // File Upload
-    parsed.mainGroupId.instance_0.fileupload.filename == "test.txt"
-    parsed.mainGroupId.instance_0.fileupload.mimetype == "text/plain"
-    parsed.mainGroupId.instance_0.fileupload.base64Data == "test content".getBytes("UTF-8").encodeBase64()
+    parsedGroupInstance.fileupload.filename == "dummy.pdf"
+    parsedGroupInstance.fileupload.mimetype == "application/pdf"
+    parsedGroupInstance.fileupload.base64Data == "PDF content".getBytes("UTF-8").encodeBase64()
 
-    parsed.mainGroupId.instance_0.yesno == true
-    parsed.mainGroupId.instance_0.simpleCheckbox == true
+    parsedGroupInstance.yesno == true
+    parsedGroupInstance.simpleCheckbox == true
 
     // Checkbox list
-    parsed.mainGroupId.instance_0.checkboxList.selectedValue[0] == "firstOption"
+    parsedGroupInstance.checkboxList.selectedValue[0] == "firstOption"
+    parsedGroupInstance.checkboxList.selectedValue[1] == "secondOption"
 
-    parsed.mainGroupId.instance_0.radioButtons == "firstOption"
-    parsed.mainGroupId.instance_0.selectOptions == "firstOption"
+    parsedGroupInstance.radioButtons == "firstOption"
+    parsedGroupInstance.selectOptions == "secondOption"
 
     // Multiselect
-    parsed.mainGroupId.instance_0.mutliselect.selectedValue[0] == "firstOption"
+    parsedGroupInstance.multiselect.selectedValue[0] == "firstOption"
+    parsedGroupInstance.multiselect.selectedValue[1] == "secondOption"
 
-    // "Schubser"
-    parsed.mainGroupId.instance_0.schubser.selectedValue[0] == "firstOption"
-
-    parsed.mainGroupId.instance_0.date == "2015-07-08T00:00:00.000+02:00"
-    parsed.mainGroupId.instance_0.time == "1970-01-01T11:55:00.000+01:00"
-    parsed.mainGroupId.instance_0.money == "12.34"
-    parsed.mainGroupId.instance_0.npa == false
+    parsedGroupInstance.date == "2015-08-09T00:00:00.000+02:00"
+    parsedGroupInstance.time == "1970-01-01T10:44:00.000+01:00"
+    parsedGroupInstance.money == "5.66"
+    parsedGroupInstance.npa == false
   }
 
   def "dumping a form with an illegally named placeholder field to XML"() {
     given:
-    final String FILENAME = "resources/formContent_withPlaceholder.json"
-    String json = getClass().getResourceAsStream(FILENAME).text
+    String json = getClass().getResourceAsStream("resources/formContent_withIllegalXmlName.json").text
+    FormContentV1 formContent = JsonToFormContentConverter.convert(json)
+    ScriptingApiV1 mockedApi = Mock(ScriptingApiV1)
+    FormV1 form = createEmptyForm()
+    mockedApi.getForm("6000357:testform:v1.0") >> form
+    addFieldToInstance(form.getGroupInstance(MAIN_GROUP_ID, 0), "123illegalNameForXmlNode", FieldTypeV1.STRING, null)
+
+    when:
+    FormDumper dumper = new FormDumper(formContent, mockedApi)
+    dumper.dumpAsXml()
+
+    then:
+    AssertionError e = thrown(AssertionError)
+    e.message == "Failed to create XML file. Field name '123illegalNameForXmlNode' is not a valid name for a XML node. Please change the field name.. Expression: fieldKey.matches(^[a-zA-Z_][\\w.-]*\$)"
+  }
+
+  def "dumping a form to HTML Table"() {
+    given:
+    String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
     FormContentV1 formContent = JsonToFormContentConverter.convert(json)
 
     when:
     FormDumper dumper = new FormDumper(formContent, mockedApi)
-    String xml = dumper.dumpAsXml()
+    String html = dumper.dumpFormAsHtmlTable()
 
     then:
-    noExceptionThrown()
+    def expectedHtml = new File('test/resources/expected.html').text.replaceAll("\n *<", "<")
+    html == expectedHtml
+  }
 
-    and:
-    xml == """\
-      <serviceportal-fields>
-        <exampleGroup>
-          <instance_0>
-            <exampleField>Example input</exampleField>
-          </instance_0>
-        </exampleGroup>
-      </serviceportal-fields>""".stripIndent()
+  def "dumping a form to HTML Table vith VerifiedFormFieldValueV1 values"() {
+    given:
+    FormContentV1 formContent = new FormContentV1("6000357:testform:v1.0")
+    formContent.fields.put(
+        MAIN_GROUP_ID + ":0:textfield",
+        FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1("textfieldContent", "DummyVerificationToken")).build())
+    formContent.fields.put(
+            MAIN_GROUP_ID + ":0:textarea",
+            FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1("textareaContent", "DummyVerificationToken")).build())
+    formContent.fields.put(
+        MAIN_GROUP_ID + ":0:date",
+        FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1(new GregorianCalendar(2015, Calendar.JULY, 8).time, "DummyVerificationToken")).build())
+
+    when:
+    FormDumper dumper = new FormDumper(formContent, mockedApi)
+    String html = dumper.dumpFormAsHtmlTable()
+
+    then:
+    def expectedHtml = new File('test/resources/expected_verifiedFormFieldValue.html').text.replaceAll("\n *<", "<")
+    html == expectedHtml
+  }
+
+  def "dumping a form to HTML Table vith VerifiedFormFieldValueV1 null values"() {
+    given:
+    FormContentV1 formContent = new FormContentV1("6000357:testform:v1.0")
+    formContent.fields.put(
+            MAIN_GROUP_ID + ":0:textfield",
+            FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1(null, "DummyVerificationToken")).build())
+    formContent.fields.put(
+            MAIN_GROUP_ID + ":0:textarea",
+            FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1(null, "DummyVerificationToken")).build())
+    formContent.fields.put(
+            MAIN_GROUP_ID + ":0:date",
+            FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1(null, "DummyVerificationToken")).build())
+
+    when:
+    FormDumper dumper = new FormDumper(formContent, mockedApi)
+    String html = dumper.dumpFormAsHtmlTable()
+
+    then:
+    def expectedHtml = new File('test/resources/expected_verifiedFormFieldValue_nullValues.html').text.replaceAll("\n *<", "<")
+    html == expectedHtml
   }
 }
 

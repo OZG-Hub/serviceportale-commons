@@ -1,16 +1,16 @@
 {
   "appliedReplacements": null,
-  "formId": "6000357:Debugstadt_Musterprozess_debugForm:v1.0.0",
+  "formId": "6000357:testform:v1.0",
   "formTitle": "",
   "validationMessages": [],
   "fields": {
-    "exampleGroup:0:123illegalNameForXmlNode": {
+    "mainGroupId:0:123illegalNameForXmlNode": {
       "value": null,
       "validationMessages": [],
       "valid": true,
       "possibleValues": null
     },
-    "exampleGroup:0:exampleField": {
+    "mainGroupId:0:exampleField": {
       "value": "hi!",
       "validationMessages": [],
       "valid": true,
