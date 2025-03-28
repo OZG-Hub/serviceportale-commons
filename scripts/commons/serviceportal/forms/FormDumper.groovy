@@ -322,11 +322,9 @@ class FormDumper {
       instance.rows.each { row ->
         row.fields.each { field ->
           String fieldId = "${instance.id}_${instance.index}_${field.id}"
-          // If field is an upload or lists, xml rendering is not suitable
           if (field.value == null || field.value.toString().isAllWhitespace()) {
             fieldsAndValues.put(fieldId, "")
-          }
-          if (shouldRenderField(field) && field.isShown(instance, formAndMapping)) {
+          } else if (shouldRenderField(field) && field.isShown(instance, formAndMapping)) {
             switch (field.type) {
               case FieldTypeV1.TIME:
                 fieldsAndValues.put(fieldId, (field.value as Date).format("HH:mm"))
