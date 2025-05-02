@@ -8,7 +8,10 @@ import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
  * ensures they are always followed.
  *
  * Log messages can be read in the "admincenter": https://{baseURL}/admincenter/#!prozesslogs
+ *
+ * @deprecated All methods here have replacements in the scripting api. Please use the api instead.
  */
+@Deprecated
 class ServiceportalLogger {
 
   private ScriptingApiV1 scriptingApiV1
@@ -33,7 +36,6 @@ class ServiceportalLogger {
    *
    * @deprecated use the api method apiV1.logger.info(msg) instead
    */
-  @Deprecated
   void log(String msg) {
     scriptingApiV1.logger.info(msg)
   }
@@ -50,7 +52,6 @@ class ServiceportalLogger {
    *
    * @deprecated use the api method apiV1.logger.info("[DEBUG] " + msg) instead
    */
-  @Deprecated
   void logDebug(String msg) {
     scriptingApiV1.logger.info("[DEBUG] $msg")
   }
@@ -63,7 +64,6 @@ class ServiceportalLogger {
    *
    * @deprecated use the api method apiV1.logger.warn(msg) instead
    */
-  @Deprecated
   void logWarn(String msg) {
     scriptingApiV1.logger.warn(msg)
   }
@@ -75,6 +75,8 @@ class ServiceportalLogger {
    *
    * @param msg The message to log
    * @param scriptingApiVi The scripting API object for information about host
+   *
+   * @deprecated use the api method apiV1.logger.infoOnDev("[DEBUG] " + msg) instead
    */
   void logPersonalDataSecurely(String msg) {
     boolean canLogPersonalData = false // To begin, assume we must not log personal data
@@ -104,7 +106,6 @@ class ServiceportalLogger {
    *
    * @param msg The message to log
    */
-  @Deprecated
   void logError(String msg) {
     scriptingApiV1.logger.warn("[ERROR] $msg")
   }
