@@ -13,6 +13,7 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.VerifiedFormFieldValueV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormFieldContentV1
+import de.seitenbau.serviceportal.scripting.api.v1.start.StartedByUserV1
 import spock.lang.Specification
 
 import java.text.SimpleDateFormat
@@ -79,6 +80,37 @@ class FormDumperSpecification extends Specification {
     addFieldToInstance(fieldGroupInstance, "money", FieldTypeV1.EURO_BETRAG, "Eurobetrag")
 
     mockedApi.getForm("6000357:testform:v1.0") >> form
+
+    // Mock api for metadata
+    StartedByUserV1 startedByUser = new StartedByUserV1("1","user","user", "user", "{\"@type\":\"nkb\",\"id\":\"ab0b63be-ee10-4740-b5e7-66aa81834510\"}")
+    mockedApi.getVariable("startedByUser", StartedByUserV1) >> startedByUser
+
+    byte[] pdfContent = getClass().getResourceAsStream("resources/dummy.pdf").readAllBytes()
+    BinaryContentV1 mockedPdf = new BinaryContentV1("key","dummy.pdf","label","application/pdf", pdfContent)
+    mockedApi.getVariable("applicantFormAsPdf", BinaryContentV1) >> mockedPdf
+  }
+
+  def "dumping a simple input to a csv with metadata"() {
+    given:
+    FormContentV1 mockedFormContent = Mock(FormContentV1, constructorArgs: ["mockedFormId"]) as FormContentV1
+    mockedFormContent.formId >> "6000357:testform:v1.0"
+    FormFieldContentV1 mockedFieldContent = Mock()
+    mockedFieldContent.value >> "Example input of a user"
+    mockedFormContent.fields >> ["exampleGroup:0:exampleField": mockedFieldContent]
+
+    byte[] pdfContent = getClass().getResourceAsStream("resources/dummy.pdf").readAllBytes()
+    String pdfContentBase64 = pdfContent.encodeBase64().toString()
+
+    FormDumper dumper = new FormDumper(mockedFormContent, mockedApi)
+
+    when:
+    String csv = dumper.dumpFormAsCsv(true)
+
+    then:
+    csv.contains("postfachHandle,{\"@type\":\"nkb\",\"id\":\"ab0b63be-ee10-4740-b5e7-66aa81834510\"}\r\n")
+    csv.contains("formId,\"6000357:testform:v1.0\"\r\n")
+    csv.contains("pdfApplicantFormBase64,\"" + pdfContentBase64 + "\"\r\n")
+    csv.contains("exampleGroup:0:exampleField,\"Example input of a user\"\r\n")
   }
 
   def "dumping a simple input to a csv"() {
@@ -161,7 +193,7 @@ class FormDumperSpecification extends Specification {
     FormDumper dumper = new FormDumper(formContent, mockedApi)
     String xml = dumper.dumpAsXml()
     def parsed = new XmlSlurper().parseText(xml)
-    def parsedGroupInstance = parsed.mainGroupId.instance_0
+    def parsedGroupInstance = parsed."serviceportal-fields".mainGroupId.instance_0
 
     then:
     parsedGroupInstance.textfield == "Textfield content"
@@ -191,6 +223,56 @@ class FormDumperSpecification extends Specification {
     parsedGroupInstance.money == "5.66"
     parsedGroupInstance.npa == false
   }
+
+  def "dumping a form to XML with metadata"() {
+    given:
+    String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
+    FormContentV1 formContent = JsonToFormContentConverter.convert(json)
+
+    byte[] pdfContent = getClass().getResourceAsStream("resources/dummy.pdf").readAllBytes()
+    String pdfContentBase64 = pdfContent.encodeBase64().toString()
+
+    when:
+    FormDumper dumper = new FormDumper(formContent, mockedApi)
+    String xml = dumper.dumpAsXml(true)
+    def parsed = new XmlSlurper().parseText(xml)
+    def parsedGroupInstance = parsed."serviceportal-fields".mainGroupId.instance_0
+    def parsedMetadata = parsed.metadata
+
+    then:
+    parsedMetadata.postfachHandle == "{\"@type\":\"nkb\",\"id\":\"ab0b63be-ee10-4740-b5e7-66aa81834510\"}"
+    parsedMetadata.formId == "6000357:testform:v1.0"
+    parsedMetadata.pdfApplicantFormBase64 == pdfContentBase64
+
+    parsedGroupInstance.textfield == "Textfield content"
+    parsedGroupInstance.textarea == "Textarea\ncontent"
+
+    // File Upload
+    parsedGroupInstance.fileupload.filename == "dummy.pdf"
+    parsedGroupInstance.fileupload.mimetype == "application/pdf"
+    parsedGroupInstance.fileupload.base64Data == "PDF content".getBytes("UTF-8").encodeBase64()
+
+    parsedGroupInstance.yesno == true
+    parsedGroupInstance.simpleCheckbox == true
+
+    // Checkbox list
+    parsedGroupInstance.checkboxList.selectedValue[0] == "firstOption"
+    parsedGroupInstance.checkboxList.selectedValue[1] == "secondOption"
+
+    parsedGroupInstance.radioButtons == "firstOption"
+    parsedGroupInstance.selectOptions == "secondOption"
+
+    // Multiselect
+    parsedGroupInstance.multiselect.selectedValue[0] == "firstOption"
+    parsedGroupInstance.multiselect.selectedValue[1] == "secondOption"
+
+    parsedGroupInstance.date == "2015-08-09T00:00:00.000+02:00"
+    parsedGroupInstance.time == "1970-01-01T10:44:00.000+01:00"
+    parsedGroupInstance.money == "5.66"
+    parsedGroupInstance.npa == false
+  }
+
+
 
   def "dumping a form with an illegally named placeholder field to XML"() {
     given:

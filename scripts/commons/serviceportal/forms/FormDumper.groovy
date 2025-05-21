@@ -7,7 +7,9 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGDIKMapContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGeoMapContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
+import de.seitenbau.serviceportal.scripting.api.v1.start.StartedByUserV1
 import groovy.json.JsonBuilder
+import groovy.json.JsonSlurper
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 import groovy.xml.MarkupBuilder
@@ -177,10 +179,22 @@ class FormDumper {
    * and the second column the users input (as a technical value, e.g. "TRUE" / "FALSE" for
    * Yes/No-fields and the selected value (not the label) in a radio button)
    *
+   * @param withMetadata A boolean that controls whether metadata is added or not (default = false). The resulting data
+   * will be inserted at the beginning of the file
+   *
    * @return A String of representing the CSV files content
    */
-  String dumpFormAsCsv() {
+  String dumpFormAsCsv(boolean withMetadata = false) {
     String result = ""
+
+    if (withMetadata) {
+      Map<String, String> metadata = collectMetadata()
+      // Add metadata
+      result += "postfachHandle" + CSV_SEPARATOR + metadata.get("postfachHandle") + "\r\n"
+      result += "formId" + CSV_SEPARATOR + escapeForCsv(metadata.get("formId")) + "\r\n"
+      result += "creationDate" + CSV_SEPARATOR + escapeForCsv(metadata.get("creationDate")) + "\r\n"
+      result += "pdfApplicantFormBase64" + CSV_SEPARATOR + escapeForCsv(metadata.get("pdfApplicantFormBase64")) + "\r\n"
+    }
 
     formContent.fields.each {
       result += it.key + CSV_SEPARATOR + escapeForCsv(it.value.value.toString()) + "\r\n"
@@ -213,7 +227,7 @@ class FormDumper {
   }
 
   /**
-   * Dump the form as a XML string where there is a single 'serviceportal-fields', with sub-fields for each group,
+   * Dump the form as a XML string where there is a single 'serviceportal' field. This field includes a 'serviceportal-fields' sub-field, with sub-fields for each group,
    * which then has sub-fields for each group instance in this group (starting with "instance_"), which then has
    * sub-fields for each field.
    *
@@ -225,6 +239,7 @@ class FormDumper {
    * Example:
    * <pre>
    * {@code
+   <serviceportal>
    <serviceportal-fields>
    <mainGroupId>
    <instance_0>
@@ -245,12 +260,15 @@ class FormDumper {
    </fileupload>
    </instance_0>
    </mainGroupId>
-   </serviceportal-fields>}
+   </serviceportal-fields>
+   </serviceportal>}
    * </pre>
+   *
+   * @param withMetadata A boolean that controls whether a metadata-field is added or not (default = false)
    *
    * @return The XML as a String
    */
-  String dumpAsXml() {
+  String dumpAsXml(boolean withMetadata = false) {
     // Get additional data about the form itself (not just the content of the filled form)
     FormV1 formAndMapping = api.getForm(formContent.getFormId())
     formAndMapping.setContent(formContent)
@@ -259,29 +277,43 @@ class FormDumper {
     MarkupBuilder xml = new MarkupBuilder(writer)
 
     Set<String> groups = formContent.fields.keySet().collect { return it.split(":")[0] }
-    xml."serviceportal-fields"() {
-      groups.each { group ->
-        assert group.matches("^[a-zA-Z_][\\w.-]*\$"): "Failed to create XML file. Group name '$group' is not a valid name for a XML node. Please change the group name."
-        "$group"() {
-          Set<Integer> groupInstances = formContent.fields.keySet().findAll { it.startsWith("$group:") }
-                  .collect { Integer.parseInt(it.split(":")[1]) }
-          groupInstances.each { groupInstance ->
-            // XML tags can NOT start with a number, so we need to add a prefix like "instance_" to it.
-            "instance_$groupInstance"() {
 
-              Set<String> fieldKeys = formContent.fields.keySet().findAll { it.startsWith("$group:$groupInstance:") }
-              fieldKeys.each { fullKey ->
-                String fieldKey = fullKey.split(":")[2]
-                assert fieldKey != null
+    xml."serviceportal"() {
+      if (withMetadata) {
+        Map<String, String> metadataMap = collectMetadata()
+        // Add metadata
+        "metadata"() {
+          "postfachHandle"(metadataMap.get("postfachHandle"))
+          "formId"(XmlUtil.escapeXml(metadataMap.get("formId")))
+          "creationDate"(XmlUtil.escapeXml(metadataMap.get("creationDate")))
+          "pdfApplicantFormBase64"(XmlUtil.escapeXml(metadataMap.get("pdfApplicantFormBase64")))
+        }
+      }
 
-                FormFieldV1 field = formAndMapping.getFieldInInstance(new FormFieldKeyV1(group, groupInstance, fieldKey))
-                if (shouldRenderField(field)) {
+      "serviceportal-fields"() {
+        groups.each { group ->
+          assert group.matches("^[a-zA-Z_][\\w.-]*\$"): "Failed to create XML file. Group name '$group' is not a valid name for a XML node. Please change the group name."
+          "$group"() {
+            Set<Integer> groupInstances = formContent.fields.keySet().findAll { it.startsWith("$group:") }
+                    .collect { Integer.parseInt(it.split(":")[1]) }
+            groupInstances.each { groupInstance ->
+              // XML tags can NOT start with a number, so we need to add a prefix like "instance_" to it.
+              "instance_$groupInstance"() {
 
-                  assert fieldKey.matches("^[a-zA-Z_][\\w.-]*\$"): "Failed to create XML file. Field name '$fieldKey' is not a valid name for a XML node. Please change the field name."
+                Set<String> fieldKeys = formContent.fields.keySet().findAll { it.startsWith("$group:$groupInstance:") }
+                fieldKeys.each { fullKey ->
+                  String fieldKey = fullKey.split(":")[2]
+                  assert fieldKey != null
 
-                  // Add field to XML object
-                  "${fieldKey}" {
-                    mkp.yieldUnescaped(renderFieldForXmlOutput(field))
+                  FormFieldV1 field = formAndMapping.getFieldInInstance(new FormFieldKeyV1(group, groupInstance, fieldKey))
+                  if (shouldRenderField(field)) {
+
+                    assert fieldKey.matches("^[a-zA-Z_][\\w.-]*\$"): "Failed to create XML file. Field name '$fieldKey' is not a valid name for a XML node. Please change the field name."
+
+                    // Add field to XML object
+                    "${fieldKey}" {
+                      mkp.yieldUnescaped(renderFieldForXmlOutput(field))
+                    }
                   }
                 }
               }
@@ -621,5 +653,34 @@ class FormDumper {
   private static String generateEmbeddedImage(BinaryContentV1 imageFile) {
     String base64OfImage = Base64.getEncoder().encodeToString(imageFile.data)
     return "<img src='data:image/jpeg;base64,${base64OfImage}' width='100%'>"
+  }
+
+  /**
+   * Generates a map of metadata with entries for postfachHandle, form id, creation date
+   * and the base64-encoded content of a binary content file named 'applicantFormAsPdf'.
+   *
+   * @return map of metadata
+   */
+  private Map<String, String> collectMetadata(){
+    Map<String, String> metadata = new HashMap<>()
+
+    StartedByUserV1 startedByUser = api.getVariable("startedByUser", StartedByUserV1)
+    String postfachHandle = startedByUser.postfachHandle
+    metadata.put("postfachHandle", postfachHandle)
+
+    metadata.put("formId", formContent.formId)
+
+    SimpleDateFormat formatter = new SimpleDateFormat(iso8601Format)
+    String formattedCreationDate = formatter.format(new Date())
+    metadata.put("creationDate", formattedCreationDate)
+
+    BinaryContentV1 pdf = api.getVariable("applicantFormAsPdf", BinaryContentV1)
+    if (pdf != null && pdf.data != null) {
+      metadata.put("pdfApplicantFormBase64", pdf.data.encodeBase64().toString())
+    } else {
+      metadata.put("pdfApplicantFormBase64", null)
+    }
+
+    return metadata
   }
 }
