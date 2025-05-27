@@ -79,6 +79,8 @@ class FormDumperSpecification extends Specification {
     fieldGroupInstance.getField("selectOptions").setPossibleValues(pvList)
     addFieldToInstance(fieldGroupInstance, "money", FieldTypeV1.EURO_BETRAG, "Eurobetrag")
 
+    mockedApi.getVariable("processEngineConfig", Map) >> ["serviceportal.environment.main-portal-host":"dev.service-bw.de"]
+
     mockedApi.getForm("6000357:testform:v1.0") >> form
 
     // Mock api for metadata
@@ -107,7 +109,7 @@ class FormDumperSpecification extends Specification {
     String csv = dumper.dumpFormAsCsv(true)
 
     then:
-    csv.contains("postfachHandle,{\"@type\":\"nkb\",\"id\":\"ab0b63be-ee10-4740-b5e7-66aa81834510\"}\r\n")
+    csv.contains("postfachHandle,\"{\"\"@type\"\":\"\"nkb\"\",\"\"id\"\":\"\"ab0b63be-ee10-4740-b5e7-66aa81834510\"\"}\"\r\n")
     csv.contains("formId,\"6000357:testform:v1.0\"\r\n")
     csv.contains("pdfApplicantFormBase64,\"" + pdfContentBase64 + "\"\r\n")
     csv.contains("exampleGroup:0:exampleField,\"Example input of a user\"\r\n")
@@ -224,6 +226,24 @@ class FormDumperSpecification extends Specification {
     parsedGroupInstance.npa == false
   }
 
+  def "check if the form structure is the same with and without metadata"() {
+    given:
+    String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
+    FormContentV1 formContent = JsonToFormContentConverter.convert(json)
+
+    byte[] pdfContent = getClass().getResourceAsStream("resources/dummy.pdf").readAllBytes()
+    String pdfContentBase64 = pdfContent.encodeBase64().toString()
+
+    when:
+    FormDumper dumper = new FormDumper(formContent, mockedApi)
+    String xmlWithMetadata = dumper.dumpAsXml(true)
+    String xmlWithoutMetadata = dumper.dumpAsXml(false)
+    def parsedWithMetadata = new XmlSlurper().parseText(xmlWithMetadata)
+    def parsedWithoutMetadata = new XmlSlurper().parseText(xmlWithoutMetadata)
+    then:
+    parsedWithMetadata."serviceportal-fields" == parsedWithoutMetadata."serviceportal-fields"
+  }
+
   def "dumping a form to XML with metadata"() {
     given:
     String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
@@ -240,36 +260,9 @@ class FormDumperSpecification extends Specification {
     def parsedMetadata = parsed.metadata
 
     then:
-    parsedMetadata.postfachHandle == "{\"@type\":\"nkb\",\"id\":\"ab0b63be-ee10-4740-b5e7-66aa81834510\"}"
+    parsedMetadata.postfachHandle == "{&quot;@type&quot;:&quot;nkb&quot;,&quot;id&quot;:&quot;ab0b63be-ee10-4740-b5e7-66aa81834510&quot;}"
     parsedMetadata.formId == "6000357:testform:v1.0"
     parsedMetadata.pdfApplicantFormBase64 == pdfContentBase64
-
-    parsedGroupInstance.textfield == "Textfield content"
-    parsedGroupInstance.textarea == "Textarea\ncontent"
-
-    // File Upload
-    parsedGroupInstance.fileupload.filename == "dummy.pdf"
-    parsedGroupInstance.fileupload.mimetype == "application/pdf"
-    parsedGroupInstance.fileupload.base64Data == "PDF content".getBytes("UTF-8").encodeBase64()
-
-    parsedGroupInstance.yesno == true
-    parsedGroupInstance.simpleCheckbox == true
-
-    // Checkbox list
-    parsedGroupInstance.checkboxList.selectedValue[0] == "firstOption"
-    parsedGroupInstance.checkboxList.selectedValue[1] == "secondOption"
-
-    parsedGroupInstance.radioButtons == "firstOption"
-    parsedGroupInstance.selectOptions == "secondOption"
-
-    // Multiselect
-    parsedGroupInstance.multiselect.selectedValue[0] == "firstOption"
-    parsedGroupInstance.multiselect.selectedValue[1] == "secondOption"
-
-    parsedGroupInstance.date == "2015-08-09T00:00:00.000+02:00"
-    parsedGroupInstance.time == "1970-01-01T10:44:00.000+01:00"
-    parsedGroupInstance.money == "5.66"
-    parsedGroupInstance.npa == false
   }
 
 

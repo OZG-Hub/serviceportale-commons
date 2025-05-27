@@ -8,8 +8,8 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGDIKMapCon
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGeoMapContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.start.StartedByUserV1
+import de.seitenbau.serviceportal.scripting.api.v1.start.StartParameterV1
 import groovy.json.JsonBuilder
-import groovy.json.JsonSlurper
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 import groovy.xml.MarkupBuilder
@@ -189,11 +189,9 @@ class FormDumper {
 
     if (withMetadata) {
       Map<String, String> metadata = collectMetadata()
-      // Add metadata
-      result += "postfachHandle" + CSV_SEPARATOR + metadata.get("postfachHandle") + "\r\n"
-      result += "formId" + CSV_SEPARATOR + escapeForCsv(metadata.get("formId")) + "\r\n"
-      result += "creationDate" + CSV_SEPARATOR + escapeForCsv(metadata.get("creationDate")) + "\r\n"
-      result += "pdfApplicantFormBase64" + CSV_SEPARATOR + escapeForCsv(metadata.get("pdfApplicantFormBase64")) + "\r\n"
+      metadata.keySet().each { key ->
+        result += key + CSV_SEPARATOR + escapeForCsv(metadata.get(key)) + "\r\n"
+      }
     }
 
     formContent.fields.each {
@@ -283,10 +281,9 @@ class FormDumper {
         Map<String, String> metadataMap = collectMetadata()
         // Add metadata
         "metadata"() {
-          "postfachHandle"(metadataMap.get("postfachHandle"))
-          "formId"(XmlUtil.escapeXml(metadataMap.get("formId")))
-          "creationDate"(XmlUtil.escapeXml(metadataMap.get("creationDate")))
-          "pdfApplicantFormBase64"(XmlUtil.escapeXml(metadataMap.get("pdfApplicantFormBase64")))
+          metadataMap.keySet().each { key ->
+            "${key}"(XmlUtil.escapeXml(metadataMap.get(key)))
+          }
         }
       }
 
@@ -664,7 +661,18 @@ class FormDumper {
   private Map<String, String> collectMetadata(){
     Map<String, String> metadata = new HashMap<>()
 
-    StartedByUserV1 startedByUser = api.getVariable("startedByUser", StartedByUserV1)
+    // Set dev or prod api url
+    Map<String, Object> processConfig = api.getVariable("processEngineConfig", Map)
+    String portal = processConfig.get("serviceportal.environment.main-portal-host").toString().trim()
+
+    // Determine the value for startedByUser based on the portal
+    StartedByUserV1 startedByUser
+    if (portal.contains("amt24") || portal.contains("service-bw")) {
+      startedByUser = api.getVariable("startedByUser", StartedByUserV1)
+    } else {
+      StartParameterV1 startParameter = api.getVariable("startParameter", StartParameterV1)
+      startedByUser = startParameter.startedByUser
+    }
     String postfachHandle = startedByUser.postfachHandle
     metadata.put("postfachHandle", postfachHandle)
 
