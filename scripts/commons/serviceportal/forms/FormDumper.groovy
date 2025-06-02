@@ -10,6 +10,7 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.start.StartedByUserV1
 import de.seitenbau.serviceportal.scripting.api.v1.start.StartParameterV1
 import groovy.json.JsonBuilder
+import groovy.json.JsonSlurper
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 import groovy.xml.MarkupBuilder
@@ -653,7 +654,7 @@ class FormDumper {
   }
 
   /**
-   * Generates a map of metadata with entries for postfachHandle, form id, creation date
+   * Generates a map of metadata with entries for postfachHandleId, form id, creation date
    * and the base64-encoded content of a binary content file named 'applicantFormAsPdf'.
    *
    * @return map of metadata
@@ -674,7 +675,10 @@ class FormDumper {
       startedByUser = startParameter.startedByUser
     }
     String postfachHandle = startedByUser.postfachHandle
-    metadata.put("postfachHandle", postfachHandle)
+    JsonSlurper jsonSlurper = new JsonSlurper()
+    def postfachHandleMap = jsonSlurper.parseText(postfachHandle)
+    String postfachHandleId = postfachHandleMap.id
+    metadata.put("postfachHandleId", postfachHandleId)
 
     metadata.put("formId", formContent.formId)
 

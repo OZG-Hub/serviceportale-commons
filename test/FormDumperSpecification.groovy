@@ -109,7 +109,7 @@ class FormDumperSpecification extends Specification {
     String csv = dumper.dumpFormAsCsv(true)
 
     then:
-    csv.contains("postfachHandle,\"{\"\"@type\"\":\"\"nkb\"\",\"\"id\"\":\"\"ab0b63be-ee10-4740-b5e7-66aa81834510\"\"}\"\r\n")
+    csv.contains("postfachHandleId,\"ab0b63be-ee10-4740-b5e7-66aa81834510\"\r\n")
     csv.contains("formId,\"6000357:testform:v1.0\"\r\n")
     csv.contains("pdfApplicantFormBase64,\"" + pdfContentBase64 + "\"\r\n")
     csv.contains("exampleGroup:0:exampleField,\"Example input of a user\"\r\n")
@@ -232,7 +232,6 @@ class FormDumperSpecification extends Specification {
     FormContentV1 formContent = JsonToFormContentConverter.convert(json)
 
     byte[] pdfContent = getClass().getResourceAsStream("resources/dummy.pdf").readAllBytes()
-    String pdfContentBase64 = pdfContent.encodeBase64().toString()
 
     when:
     FormDumper dumper = new FormDumper(formContent, mockedApi)
@@ -256,11 +255,10 @@ class FormDumperSpecification extends Specification {
     FormDumper dumper = new FormDumper(formContent, mockedApi)
     String xml = dumper.dumpAsXml(true)
     def parsed = new XmlSlurper().parseText(xml)
-    def parsedGroupInstance = parsed."serviceportal-fields".mainGroupId.instance_0
     def parsedMetadata = parsed.metadata
 
     then:
-    parsedMetadata.postfachHandle == "{&quot;@type&quot;:&quot;nkb&quot;,&quot;id&quot;:&quot;ab0b63be-ee10-4740-b5e7-66aa81834510&quot;}"
+    parsedMetadata.postfachHandleId == "ab0b63be-ee10-4740-b5e7-66aa81834510"
     parsedMetadata.formId == "6000357:testform:v1.0"
     parsedMetadata.pdfApplicantFormBase64 == pdfContentBase64
   }
