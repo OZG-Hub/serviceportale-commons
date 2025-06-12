@@ -1,5 +1,6 @@
 import commons.serviceportal.forms.JsonToFormContentConverter
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
+import de.seitenbau.serviceportal.scripting.api.v1.StringUtilsApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldGroupInstanceV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldGroupV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldTypeV1
@@ -90,6 +91,14 @@ class FormDumperSpecification extends Specification {
     byte[] pdfContent = getClass().getResourceAsStream("resources/dummy.pdf").readAllBytes()
     BinaryContentV1 mockedPdf = new BinaryContentV1("key","dummy.pdf","label","application/pdf", pdfContent)
     mockedApi.getVariable("applicantFormAsPdf", BinaryContentV1) >> mockedPdf
+
+    StringUtilsApiV1 mockedStringUtilsApiV1 = Mock(StringUtilsApiV1)
+    mockedApi.getStringUtils() >> mockedStringUtilsApiV1
+    mockedStringUtilsApiV1.escapeHtml(_) >> { args -> return ((String) args[0])
+            .replace('<', "&lt;")
+            .replace('>', "&gt;")
+            .replace('"', '&quot;')
+            .replace('€', "&euro;") }
   }
 
   def "dumping a simple input to a csv with metadata"() {
@@ -230,8 +239,6 @@ class FormDumperSpecification extends Specification {
     given:
     String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
     FormContentV1 formContent = JsonToFormContentConverter.convert(json)
-
-    byte[] pdfContent = getClass().getResourceAsStream("resources/dummy.pdf").readAllBytes()
 
     when:
     FormDumper dumper = new FormDumper(formContent, mockedApi)
