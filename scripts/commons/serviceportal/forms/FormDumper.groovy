@@ -137,6 +137,7 @@ class FormDumper {
    */
   String dumpFormAsText(boolean printGroupHeadings = true) {
     FormV1 formAndMapping = api.getForm(formContent.getFormId())
+    formAndMapping.setContent(formContent)
     String result = ""
 
     formAndMapping.groupInstances.eachWithIndex { groupInstance, index ->
