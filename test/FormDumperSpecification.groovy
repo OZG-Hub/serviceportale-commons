@@ -1,5 +1,6 @@
 import commons.serviceportal.forms.JsonToFormContentConverter
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
+import de.seitenbau.serviceportal.scripting.api.v1.StringUtilsApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldGroupInstanceV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldGroupV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldTypeV1
@@ -90,6 +91,14 @@ class FormDumperSpecification extends Specification {
     byte[] pdfContent = getClass().getResourceAsStream("resources/dummy.pdf").readAllBytes()
     BinaryContentV1 mockedPdf = new BinaryContentV1("key","dummy.pdf","label","application/pdf", pdfContent)
     mockedApi.getVariable("applicantFormAsPdf", BinaryContentV1) >> mockedPdf
+
+    StringUtilsApiV1 mockedStringUtilsApiV1 = Mock(StringUtilsApiV1)
+    mockedApi.getStringUtils() >> mockedStringUtilsApiV1
+    mockedStringUtilsApiV1.escapeHtml(_) >> { args -> return ((String) args[0])
+            .replace('<', "&lt;")
+            .replace('>', "&gt;")
+            .replace('"', '&quot;')
+            .replace('€', "&euro;") }
   }
 
   def "dumping a simple input to a csv with metadata"() {
@@ -198,7 +207,7 @@ class FormDumperSpecification extends Specification {
     def parsedGroupInstance = parsed."serviceportal-fields".mainGroupId.instance_0
 
     then:
-    parsedGroupInstance.textfield == "Textfield content"
+    parsedGroupInstance.textfield == "Textfield content with <html>HTML</html>"
     parsedGroupInstance.textarea == "Textarea\ncontent"
 
     // File Upload
@@ -230,8 +239,6 @@ class FormDumperSpecification extends Specification {
     given:
     String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
     FormContentV1 formContent = JsonToFormContentConverter.convert(json)
-
-    byte[] pdfContent = getClass().getResourceAsStream("resources/dummy.pdf").readAllBytes()
 
     when:
     FormDumper dumper = new FormDumper(formContent, mockedApi)
@@ -339,6 +346,20 @@ class FormDumperSpecification extends Specification {
     then:
     def expectedHtml = new File('test/resources/expected_verifiedFormFieldValue_nullValues.html').text.replaceAll("\n *<", "<")
     html == expectedHtml
+  }
+
+  def "dumping a form to Text"() {
+    given:
+    String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
+    FormContentV1 formContent = JsonToFormContentConverter.convert(json)
+
+    when:
+    FormDumper dumper = new FormDumper(formContent, mockedApi)
+    String text = dumper.dumpFormAsText(true)
+
+    then:
+    def expectedText = new File('test/resources/expected.txt').text
+    text == expectedText
   }
 }
 

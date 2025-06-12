@@ -1,0 +1,15 @@
+Main Group (mainGroupId):
+  Time >>> 10:44 <<<
+  Yes/No >>> Ja <<<
+  NPA >>> Sie waren NICHT mit dem neuem Personalausweis angemeldet <<<
+  Textfield >>> Textfield content with &lt;html&gt;HTML&lt;/html&gt; <<<
+  Sinple Checkbox >>> Ja <<<
+  Radio Buttons >>> first label <<<
+  Textarea >>> Textarea
+content <<<
+  Multiselect >>> first label, second label <<<
+  Checkbox List >>> first label, second label <<<
+  Fileupload >>> Datei: &quot;dummy.pdf&quot; <<<
+  Date >>> 09.08.2015 <<<
+  SelectOptions >>> second label <<<
+  Eurobetrag >>> 5.66 &euro; <<<
