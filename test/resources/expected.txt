@@ -1,0 +1,14 @@
+Main Group (mainGroupId):
+  Time >>> [Keine Eingabe] <<<
+  Yes/No >>> [Keine Eingabe] <<<
+  NPA >>> [Keine Eingabe] <<<
+  Textfield >>> [Keine Eingabe] <<<
+  Sinple Checkbox >>> [Keine Eingabe] <<<
+  Radio Buttons >>> [Keine Eingabe] <<<
+  Textarea >>> [Keine Eingabe] <<<
+  Multiselect >>> [Keine Eingabe] <<<
+  Checkbox List >>> [Keine Eingabe] <<<
+  Fileupload >>> [Keine Eingabe] <<<
+  Date >>> [Keine Eingabe] <<<
+  SelectOptions >>> [Keine Eingabe] <<<
+  Eurobetrag >>> [Keine Eingabe] <<<

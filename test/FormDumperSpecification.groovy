@@ -198,7 +198,7 @@ class FormDumperSpecification extends Specification {
     def parsedGroupInstance = parsed."serviceportal-fields".mainGroupId.instance_0
 
     then:
-    parsedGroupInstance.textfield == "Textfield content"
+    parsedGroupInstance.textfield == "Textfield content with <html>HTML</html>"
     parsedGroupInstance.textarea == "Textarea\ncontent"
 
     // File Upload
@@ -339,6 +339,20 @@ class FormDumperSpecification extends Specification {
     then:
     def expectedHtml = new File('test/resources/expected_verifiedFormFieldValue_nullValues.html').text.replaceAll("\n *<", "<")
     html == expectedHtml
+  }
+
+  def "dumping a form to Text"() {
+    given:
+    String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
+    FormContentV1 formContent = JsonToFormContentConverter.convert(json)
+
+    when:
+    FormDumper dumper = new FormDumper(formContent, mockedApi)
+    String text = dumper.dumpFormAsText(true)
+
+    then:
+    def expectedText = new File('test/resources/expected.txt').text
+    text == expectedText
   }
 }
 

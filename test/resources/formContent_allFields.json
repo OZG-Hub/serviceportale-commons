@@ -30,7 +30,7 @@
       "possibleValues": null
     },
     "mainGroupId:0:textfield": {
-      "value": "Textfield content",
+      "value": "Textfield content with <html>HTML</html>",
       "validationMessages": [],
       "valid": true,
       "possibleValues": null
