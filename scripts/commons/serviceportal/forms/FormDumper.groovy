@@ -525,6 +525,11 @@ class FormDumper {
       return "" // Empty fields have empty strings
     }
 
+    if (value instanceof VerifiedFormFieldValueV1)
+    {
+      value = ((VerifiedFormFieldValueV1) value).value
+    }
+
     switch (value.class) {
       case String:
         return XmlUtil.escapeXml(value as String)
