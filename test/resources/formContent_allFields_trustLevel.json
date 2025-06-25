@@ -1,0 +1,40 @@
+{
+  "appliedReplacements": null,
+  "formId": "6000663:Vertrauensniveau:v1.0",
+  "formTitle": null,
+  "validationMessages": [],
+  "fields": {
+    "nameGroup:0:name": {
+      "value": {
+        "value": "Testname",
+        "verificationToken": "eyJhbGciOiJSUzI1NiJ9.eyJjb250ZW50Ijp7Imhhc2hlZFZhbHVlIjoiNzcyZG14Q0hQek9ZS3NVd3pjQ0dGSkxaaFkybnpxdDEyc0grQlBid1gyVT0iLCJzYWx0IjoiTlIvakM1czFnN1k9IiwidmFsdWVUeXBlIjoiU1RSSU5HIiwidmVyaWZpY2F0aW9uSW5mb0xpc3QiOlt7InZlcmlmaWNhdGlvbkxldmVsIjoiVk5fQkFTSVNfUkVBRE9VVCIsImFkZGl0aW9uYWxJbmZvIjp7ImF0dHJpYnV0ZSI6eyJ0eXBlIjoiamF2YS5sYW5nLlN0cmluZyIsInZhbHVlIjoidm9ybmFtZSJ9fX1dfSwiaWF0IjoxNzUwODQ3ODkxfQ.RYTm9942ZvAdwIJ4sEWUN5yqqnTY9o31_k_dB7y8Dx1wpaMer8pC4OTcS4j6QtPNlrHaA-P08PSFCvmGRUM3xhXP-omKe9QkT-6bg-aubhmxpXgAddRsBO4yS7LryPyUb-WpK1Rhe31-EZewVMRhT0FSFtlCbOhK9O49jRv8Gy9SIYWzEhfpsjzr6vwfjm6hNjZ5tU0KwVPPIXahyqALzy2Dphn1SodEQVFzErs2g_GYzCC_35qVdITrL2js9nLamm4lI2256gHuflC3Zt4w916iFT3oUL9KLbUTGxhbWmmOYAAewz64m_hgEyRV-2WIIHvD-Pt9ceYdzPzyTmfBNg",
+        "valueType": "STRING"
+      },
+      "validationMessages": [],
+      "valid": true,
+      "possibleValues": null
+    }
+  },
+  "context": {
+    "processInstanceId": "AZemqqdSciGEI-RyEv1Q5A",
+    "firstname": "Test",
+    "processInstanceStartTime": 1750847891277,
+    "npaAlreadyReadOut": false,
+    "rootProcessDefinitionKey": "m6000663.Testprozess",
+    "processDefinitionName": "Testprozess",
+    "sessionId": "7e20cded-92a5-40bf-9b6a-a38fe3ba0abf",
+    "userId": "bund-C9kmSDfcDJc3cdBlfD7L31QQ-v1SW-15GMuEn9-MdWs",
+    "servicekontoContextId": "bund-C9kmSDfcDJc3cdBlfD7L31QQ-v1SW-15GMuEn9-MdWs",
+    "lastname": "SEITENBAU",
+    "taskSubprocessId": "AZemqqdSciGEI-RyEv1Q5A",
+    "processInstanceStartedByName": "Test SEITENBAU",
+    "servicekontoNpaAuthenticated": false,
+    "superProcessDefinitionName": "Testprozess",
+    "processType": "ELEKTRONISCHER_ANTRAG",
+    "taskId": "AZemqqfQeYyNC0PXzqbjug",
+    "servicekontoContextType": "BUND",
+    "username": "Test SEITENBAU"
+  },
+  "pressedCustomButton": null,
+  "createdOn": "2025-06-25T10:38:14+0000"
+}
