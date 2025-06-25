@@ -43,15 +43,6 @@ class FormDumperSpecification extends Specification {
     return form
   }
 
-  FormV1 createEmptyFormWithTrustLevelFields()
-  {
-    FormV1 form = new FormV1("6000663:Vertrauensniveau:v1.0")
-    FieldGroupV1 fieldGroup = new FieldGroupV1("nameGroup")
-    FormSectionV1 section = FormSectionV1.builder().fieldGroups([fieldGroup]).build()
-    form.getSections().add(section)
-    return form
-  }
-
   def setup() {
     // Mock scripting API
     mockedApi = Mock(ScriptingApiV1)
@@ -88,17 +79,11 @@ class FormDumperSpecification extends Specification {
     addFieldToInstance(fieldGroupInstance, "selectOptions", FieldTypeV1.DROPDOWN_SINGLE_SELECT, "SelectOptions")
     fieldGroupInstance.getField("selectOptions").setPossibleValues(pvList)
     addFieldToInstance(fieldGroupInstance, "money", FieldTypeV1.EURO_BETRAG, "Eurobetrag")
+    addFieldToInstance(fieldGroupInstance, "name", FieldTypeV1.STRING, "Name")
 
     mockedApi.getVariable("processEngineConfig", Map) >> ["serviceportal.environment.main-portal-host":"dev.service-bw.de"]
 
     mockedApi.getForm("6000357:testform:v1.0") >> form
-
-    // Mock form with trust level field
-    FormV1 trustLevelForm = createEmptyFormWithTrustLevelFields()
-    FieldGroupInstanceV1 trustLevelFieldGroupInstance = trustLevelForm.getGroupInstance("nameGroup", 0)
-    trustLevelFieldGroupInstance.setTitle("Name Group")
-    addFieldToInstance(trustLevelFieldGroupInstance, "name", FieldTypeV1.STRING, "Name")
-    mockedApi.getForm("6000663:Vertrauensniveau:v1.0") >> trustLevelForm
 
     // Mock api for metadata
     StartedByUserV1 startedByUser = new StartedByUserV1("1","user","user", "user", "{\"@type\":\"nkb\",\"id\":\"ab0b63be-ee10-4740-b5e7-66aa81834510\"}")
@@ -245,26 +230,13 @@ class FormDumperSpecification extends Specification {
     parsedGroupInstance.multiselect.selectedValue[0] == "firstOption"
     parsedGroupInstance.multiselect.selectedValue[1] == "secondOption"
 
+    // Trust level
+    parsedGroupInstance.name == "Testname"
+
     parsedGroupInstance.date == "2015-08-09T00:00:00.000+02:00"
     parsedGroupInstance.time == "1970-01-01T10:44:00.000+01:00"
     parsedGroupInstance.money == "5.66"
     parsedGroupInstance.npa == false
-  }
-
-  def "dumping a form with trust level fields to XML"() {
-    given:
-    String json = getClass().getResourceAsStream("resources/formContent_allFields_trustLevel.json").text
-    FormContentV1 formContent = JsonToFormContentConverter.convert(json)
-
-    when:
-    FormDumper dumper = new FormDumper(formContent, mockedApi)
-    String xml = dumper.dumpAsXml()
-    def parsed = new XmlSlurper().parseText(xml)
-    def parsedGroupInstance = parsed."serviceportal-fields".nameGroup.instance_0
-
-    then:
-    // Trust level field
-    parsedGroupInstance.name == "Testname"
   }
 
   def "check if the form structure is the same with and without metadata"() {
