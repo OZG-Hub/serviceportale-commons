@@ -79,6 +79,7 @@ class FormDumperSpecification extends Specification {
     addFieldToInstance(fieldGroupInstance, "selectOptions", FieldTypeV1.DROPDOWN_SINGLE_SELECT, "SelectOptions")
     fieldGroupInstance.getField("selectOptions").setPossibleValues(pvList)
     addFieldToInstance(fieldGroupInstance, "money", FieldTypeV1.EURO_BETRAG, "Eurobetrag")
+    addFieldToInstance(fieldGroupInstance, "name", FieldTypeV1.STRING, "Name")
 
     mockedApi.getVariable("processEngineConfig", Map) >> ["serviceportal.environment.main-portal-host":"dev.service-bw.de"]
 
@@ -228,6 +229,9 @@ class FormDumperSpecification extends Specification {
     // Multiselect
     parsedGroupInstance.multiselect.selectedValue[0] == "firstOption"
     parsedGroupInstance.multiselect.selectedValue[1] == "secondOption"
+
+    // Trust level
+    parsedGroupInstance.name == "Testname"
 
     parsedGroupInstance.date == "2015-08-09T00:00:00.000+02:00"
     parsedGroupInstance.time == "1970-01-01T10:44:00.000+01:00"
