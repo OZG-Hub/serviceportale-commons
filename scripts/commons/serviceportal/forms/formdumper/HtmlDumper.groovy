@@ -10,6 +10,49 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGDIKMapCon
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGeoMapContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
 
+/**
+ * Transforms a Serviceportal-proprietary form (= a FormContentV1 object) into HTML-tables, useful e.g. for showing
+ * a summary page.
+ *
+ * See {@link AbstractFormDumper}
+ *
+ * <h2>Example Output:</h2>
+ * <h2>Main Group</h2>
+ * <table class="summary-form">
+ *   <thead>
+ *     <tr>
+ *       <th>Feld</th>
+ *       <th>Ihre Eingabe</th>
+ *     </tr>
+ *   </thead>
+ *   <tbody>
+ *     <tr>
+ *       <td>Yes/No</td>
+ *       <td>Ja</td>
+ *     </tr>
+ *     <tr>
+ *       <td>Textfield</td>
+ *       <td>Textfield content</td>
+ *     </tr>
+ *     <tr>
+ *       <td>Radio Buttons</td>
+ *       <td>first label</td>
+ *     </tr>
+ *     <tr>
+ *       <td>Checkbox List</td>
+ *       <td>first label, second label</td>
+ *     </tr>
+ *     <tr>
+ *       <td>Fileupload</td>
+ *       <td>Datei: &quot;dummy.pdf&quot;</td>
+ *     </tr>
+ *     <tr>
+ *       <td>Eurobetrag</td>
+ *       <td>5.66 &euro;</td>
+ *     </tr>
+ *   </tbody>
+ * </table>
+ */
 class HtmlDumper extends AbstractFormDumper {
   HtmlDumper(FormContentV1 formContent, ScriptingApiV1 api) {
     super(formContent, api)

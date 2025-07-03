@@ -1,5 +1,6 @@
 import commons.serviceportal.forms.JsonToFormContentConverter
 import commons.serviceportal.forms.formdumper.HtmlDumper
+import commons.serviceportal.forms.formdumper.TextDumper
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.StringUtilsApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldGroupInstanceV1
@@ -348,6 +349,35 @@ class FormDumperSpecification extends Specification {
     then:
     def expectedHtml = new File('test/resources/expected_verifiedFormFieldValue_nullValues.html').text.replaceAll("\n *<", "<")
     html == expectedHtml
+  }
+
+  def "dumping a form to raw text, with headings and without HTML-escaping"() {
+    given:
+    String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
+    FormContentV1 formContent = JsonToFormContentConverter.convert(json)
+
+    when:
+    TextDumper dumper = new TextDumper(formContent, mockedApi)
+    String output = dumper.dump(true, false)
+
+    then:
+    output == """\
+Main Group (mainGroupId):
+  Time >>> 10:44 <<<
+  Yes/No >>> Ja <<<
+  NPA >>> Sie waren NICHT mit dem neuem Personalausweis angemeldet <<<
+  Textfield >>> Textfield content <<<
+  Sinple Checkbox >>> Ja <<<
+  Radio Buttons >>> first label <<<
+  Textarea >>> Textarea
+content <<<
+  Multiselect >>> first label, second label <<<
+  Checkbox List >>> first label, second label <<<
+  Fileupload >>> Datei: "dummy.pdf" <<<
+  Date >>> 09.08.2015 <<<
+  SelectOptions >>> second label <<<
+  Eurobetrag >>> 5.66 € <<<
+"""
   }
 }
 

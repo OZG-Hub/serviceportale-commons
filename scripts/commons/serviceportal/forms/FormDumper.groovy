@@ -55,51 +55,6 @@ class FormDumper {
     this.api = api
   }
 
-  /**
-   * Dump the content of a form as a human readable text
-   *
-   * @param printGroupHeadings set to true if groups in the form should have headings
-   * @return a String containing a human readable version of the form
-   */
-  String dumpFormAsText(boolean printGroupHeadings = true) {
-    FormV1 formAndMapping = api.getForm(formContent.getFormId())
-    String result = ""
-
-    formAndMapping.groupInstances.eachWithIndex { groupInstance, index ->
-      boolean groupIsEmpty = true
-
-      // Group heading
-      if (printGroupHeadings) {
-        String groupHeading = ""
-        if (!groupInstance.title.empty) {
-          groupHeading += groupInstance.title + " "
-        }
-        groupHeading += "(${groupInstance.id})"
-        groupHeading += ":\n"
-        result += groupHeading
-        groupIsEmpty = false
-      }
-
-
-      groupInstance.rows.each { FormRowV1 row ->
-        row.fields.each { FormFieldV1 field ->
-          if (shouldRenderField(field) && field.isShown(groupInstance, formAndMapping)) {
-            // Do not import StringEscapeUtils, see line 1
-            result += "  ${field.label} >>> ${org.apache.commons.text.StringEscapeUtils.escapeHtml4(renderFieldForUserOutput(field))} <<<\n"
-            groupIsEmpty = false
-          }
-        }
-      }
-
-      if (!groupIsEmpty) // only print newlines, if there actually was something to separate
-        result += "\n"
-    }
-
-    if (result.length() != 0) {
-      result = result.substring(0, result.length() - 1) // remove last newline
-    }
-    return result
-  }
 
   /**
    * Dump the form as a simple CSV String in which the first column contains the form field name
