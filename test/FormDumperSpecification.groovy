@@ -1,5 +1,7 @@
 import commons.serviceportal.forms.JsonToFormContentConverter
+import commons.serviceportal.forms.formdumper.HtmlDumper
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
+import de.seitenbau.serviceportal.scripting.api.v1.StringUtilsApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldGroupInstanceV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldGroupV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldTypeV1
@@ -25,16 +27,14 @@ class FormDumperSpecification extends Specification {
   public static final String MAIN_GROUP_ID = "mainGroupId"
   private static ScriptingApiV1 mockedApi
 
-  void addFieldToInstance(FieldGroupInstanceV1 groupInstance, String fieldId, FieldTypeV1 type, String label)
-  {
+  void addFieldToInstance(FieldGroupInstanceV1 groupInstance, String fieldId, FieldTypeV1 type, String label) {
     FormFieldV1 field = new FormFieldV1(fieldId, type)
     field.setLabel(label)
     FormRowV1 row = FormRowV1.builder().fields([field]).build()
     groupInstance.getRows().add(row)
   }
 
-  FormV1 createEmptyForm()
-  {
+  FormV1 createEmptyForm() {
     FormV1 form = new FormV1("6000357:testform:v1.0")
     FieldGroupV1 fieldGroup = new FieldGroupV1(MAIN_GROUP_ID)
     FormSectionV1 section = FormSectionV1.builder().fieldGroups([fieldGroup]).build()
@@ -79,16 +79,27 @@ class FormDumperSpecification extends Specification {
     fieldGroupInstance.getField("selectOptions").setPossibleValues(pvList)
     addFieldToInstance(fieldGroupInstance, "money", FieldTypeV1.EURO_BETRAG, "Eurobetrag")
 
-    mockedApi.getVariable("processEngineConfig", Map) >> ["serviceportal.environment.main-portal-host":"dev.service-bw.de"]
+    mockedApi.getVariable("processEngineConfig", Map) >> ["serviceportal.environment.main-portal-host": "dev.service-bw.de"]
 
     mockedApi.getForm("6000357:testform:v1.0") >> form
 
     // Mock api for metadata
-    StartedByUserV1 startedByUser = new StartedByUserV1("1","user","user", "user", "{\"@type\":\"nkb\",\"id\":\"ab0b63be-ee10-4740-b5e7-66aa81834510\"}")
+    StartedByUserV1 startedByUser = new StartedByUserV1("1", "user", "user", "user", "{\"@type\":\"nkb\",\"id\":\"ab0b63be-ee10-4740-b5e7-66aa81834510\"}")
     mockedApi.getVariable("startedByUser", StartedByUserV1) >> startedByUser
 
+    // Mock escapeHtml function
+    StringUtilsApiV1 mockedStringUtils = Mock(StringUtilsApiV1)
+    mockedApi.stringUtils >> mockedStringUtils
+    mockedStringUtils.escapeHtml(_) >> { args ->
+      return ((String) args[0])
+              .replace('<', "&lt;")
+              .replace('>', "&gt;")
+              .replace('"', '&quot;')
+              .replace('€', "&euro;")
+    }
+
     byte[] pdfContent = getClass().getResourceAsStream("resources/dummy.pdf").readAllBytes()
-    BinaryContentV1 mockedPdf = new BinaryContentV1("key","dummy.pdf","label","application/pdf", pdfContent)
+    BinaryContentV1 mockedPdf = new BinaryContentV1("key", "dummy.pdf", "label", "application/pdf", pdfContent)
     mockedApi.getVariable("applicantFormAsPdf", BinaryContentV1) >> mockedPdf
   }
 
@@ -263,8 +274,6 @@ class FormDumperSpecification extends Specification {
     parsedMetadata.pdfApplicantFormBase64 == pdfContentBase64
   }
 
-
-
   def "dumping a form with an illegally named placeholder field to XML"() {
     given:
     String json = getClass().getResourceAsStream("resources/formContent_withIllegalXmlName.json").text
@@ -289,8 +298,8 @@ class FormDumperSpecification extends Specification {
     FormContentV1 formContent = JsonToFormContentConverter.convert(json)
 
     when:
-    FormDumper dumper = new FormDumper(formContent, mockedApi)
-    String html = dumper.dumpFormAsHtmlTable()
+    HtmlDumper dumper = new HtmlDumper(formContent, mockedApi)
+    String html = dumper.dump()
 
     then:
     def expectedHtml = new File('test/resources/expected.html').text.replaceAll("\n *<", "<")
@@ -301,18 +310,18 @@ class FormDumperSpecification extends Specification {
     given:
     FormContentV1 formContent = new FormContentV1("6000357:testform:v1.0")
     formContent.fields.put(
-        MAIN_GROUP_ID + ":0:textfield",
-        FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1("textfieldContent", "DummyVerificationToken")).build())
+            MAIN_GROUP_ID + ":0:textfield",
+            FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1("textfieldContent", "DummyVerificationToken")).build())
     formContent.fields.put(
             MAIN_GROUP_ID + ":0:textarea",
             FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1("textareaContent", "DummyVerificationToken")).build())
     formContent.fields.put(
-        MAIN_GROUP_ID + ":0:date",
-        FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1(new GregorianCalendar(2015, Calendar.JULY, 8).time, "DummyVerificationToken")).build())
+            MAIN_GROUP_ID + ":0:date",
+            FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1(new GregorianCalendar(2015, Calendar.JULY, 8).time, "DummyVerificationToken")).build())
 
     when:
-    FormDumper dumper = new FormDumper(formContent, mockedApi)
-    String html = dumper.dumpFormAsHtmlTable()
+    HtmlDumper dumper = new HtmlDumper(formContent, mockedApi)
+    String html = dumper.dump()
 
     then:
     def expectedHtml = new File('test/resources/expected_verifiedFormFieldValue.html').text.replaceAll("\n *<", "<")
@@ -333,8 +342,8 @@ class FormDumperSpecification extends Specification {
             FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1(null, "DummyVerificationToken")).build())
 
     when:
-    FormDumper dumper = new FormDumper(formContent, mockedApi)
-    String html = dumper.dumpFormAsHtmlTable()
+    HtmlDumper dumper = new HtmlDumper(formContent, mockedApi)
+    String html = dumper.dump()
 
     then:
     def expectedHtml = new File('test/resources/expected_verifiedFormFieldValue_nullValues.html').text.replaceAll("\n *<", "<")
