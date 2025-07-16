@@ -28,7 +28,7 @@ class FormDumper {
   private Closure<Boolean> additionalLogicToHideContent = { FormFieldV1 field -> return false }
 
   static private final String iso8601Format = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
-  static private final String CSV_SEPARATOR = ","
+
 
   /**
    * Creates a new FormDumper. A class used to transform Serviceportal forms into other formats.
@@ -53,57 +53,6 @@ class FormDumper {
     }
 
     this.api = api
-  }
-
-
-  /**
-   * Dump the form as a simple CSV String in which the first column contains the form field name
-   * and the second column the users input (as a technical value, e.g. "TRUE" / "FALSE" for
-   * Yes/No-fields and the selected value (not the label) in a radio button)
-   *
-   * @param withMetadata A boolean that controls whether metadata is added or not (default = false). The resulting data
-   * will be inserted at the beginning of the file
-   *
-   * @return A String of representing the CSV files content
-   */
-  String dumpFormAsCsv(boolean withMetadata = false) {
-    String result = ""
-
-    if (withMetadata) {
-      Map<String, String> metadata = collectMetadata()
-      metadata.keySet().each { key ->
-        result += key + CSV_SEPARATOR + escapeForCsv(metadata.get(key)) + "\r\n"
-      }
-    }
-
-    formContent.fields.each {
-      result += it.key + CSV_SEPARATOR + escapeForCsv(it.value.value.toString()) + "\r\n"
-    }
-
-    return result
-  }
-
-  /**
-   * See {@link #dumpFormAsCsv}, but the second column is moved to the third and now contains the
-   * Java data type instead.
-   * @return
-   */
-  String dumpFormAsCsvWithDatatype() {
-    String result = ""
-
-    formContent.fields.each {
-      result += it.key + CSV_SEPARATOR
-      def userInput = it?.value?.value
-      if (userInput == null) {
-        result += "null" + CSV_SEPARATOR
-        result += "[no user input]" + "\r\n"
-      } else {
-        result += userInput.getClass().getSimpleName() + CSV_SEPARATOR
-        result += escapeForCsv(userInput.toString()) + "\r\n"
-      }
-    }
-
-    return result
   }
 
   /**
@@ -343,10 +292,6 @@ class FormDumper {
     }
   }
 
-  private static String escapeForCsv(String stringToEscape) {
-    // Add surrounding quotes and escape quotes that might appear in the string
-    return "\"" + stringToEscape.replace("\"", "\"\"") + "\""
-  }
 
   /**
    * Generates a map of metadata with entries for postfachHandleId, form id, creation date
