@@ -2,6 +2,7 @@ import commons.serviceportal.forms.JsonToFormContentConverter
 import commons.serviceportal.forms.formdumper.CsvDumper
 import commons.serviceportal.forms.formdumper.HtmlDumper
 import commons.serviceportal.forms.formdumper.TextDumper
+import commons.serviceportal.forms.formdumper.XmlDumper
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.StringUtilsApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldGroupInstanceV1
@@ -181,8 +182,8 @@ mainGroupId:0:money,"5.66"
     FormContentV1 formContent = JsonToFormContentConverter.convert(json)
 
     when:
-    FormDumper dumper = new FormDumper(formContent, mockedApi)
-    String xml = dumper.dumpAsXml()
+    XmlDumper dumper = new XmlDumper(formContent, mockedApi)
+    String xml = dumper.dump()
     def parsed = new XmlSlurper().parseText(xml)
     def parsedGroupInstance = parsed."serviceportal-fields".mainGroupId.instance_0
 
@@ -220,16 +221,14 @@ mainGroupId:0:money,"5.66"
     String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
     FormContentV1 formContent = JsonToFormContentConverter.convert(json)
 
-    byte[] pdfContent = getClass().getResourceAsStream("resources/dummy.pdf").readAllBytes()
-
     when:
-    FormDumper dumper = new FormDumper(formContent, mockedApi)
-    String xmlWithMetadata = dumper.dumpAsXml(true)
-    String xmlWithoutMetadata = dumper.dumpAsXml(false)
+    String xmlNoMetadata = new XmlDumper(formContent, mockedApi, true).dump()
+    String xmlWithMetadata = new XmlDumper(formContent, mockedApi, false).dump()
     def parsedWithMetadata = new XmlSlurper().parseText(xmlWithMetadata)
-    def parsedWithoutMetadata = new XmlSlurper().parseText(xmlWithoutMetadata)
+    def parsedNoMetadata = new XmlSlurper().parseText(xmlNoMetadata)
+
     then:
-    parsedWithMetadata."serviceportal-fields" == parsedWithoutMetadata."serviceportal-fields"
+    parsedWithMetadata."serviceportal-fields" == parsedNoMetadata."serviceportal-fields"
   }
 
   def "dumping a form to XML with metadata"() {
@@ -241,8 +240,8 @@ mainGroupId:0:money,"5.66"
     String pdfContentBase64 = pdfContent.encodeBase64().toString()
 
     when:
-    FormDumper dumper = new FormDumper(formContent, mockedApi)
-    String xml = dumper.dumpAsXml(true)
+    XmlDumper dumper = new XmlDumper(formContent, mockedApi)
+    String xml = dumper.dump()
     def parsed = new XmlSlurper().parseText(xml)
     def parsedMetadata = parsed.metadata
 
@@ -262,8 +261,8 @@ mainGroupId:0:money,"5.66"
     addFieldToInstance(form.getGroupInstance(MAIN_GROUP_ID, 0), "123illegalNameForXmlNode", FieldTypeV1.STRING, null)
 
     when:
-    FormDumper dumper = new FormDumper(formContent, mockedApi)
-    dumper.dumpAsXml()
+    XmlDumper dumper = new XmlDumper(formContent, mockedApi)
+    dumper.dump()
 
     then:
     AssertionError e = thrown(AssertionError)

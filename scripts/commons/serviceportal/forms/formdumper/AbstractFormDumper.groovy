@@ -11,6 +11,9 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGDIKMapContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGeoMapContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
+import de.seitenbau.serviceportal.scripting.api.v1.start.StartParameterV1
+import de.seitenbau.serviceportal.scripting.api.v1.start.StartedByUserV1
+import groovy.json.JsonSlurper
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -28,6 +31,7 @@ import java.text.SimpleDateFormat
 abstract class AbstractFormDumper {
   final protected FormV1 form
   final protected ScriptingApiV1 api
+  final protected boolean includeMetadata
 
   /**
    * Additional rules which decided if a field should be hidden. By default we show all fields.
@@ -40,13 +44,16 @@ abstract class AbstractFormDumper {
    * @param formContent The form to transform
    * @param api The API of the serviceportal. The only way to access this is via the variable "apiV1" that is available
    *   in a script task.
+   * @param includeMetadata whether to include metadata about the application like postfachHandleId, form id, creation
+   *   date and a base64-encoded PDF file of the form
    */
-  AbstractFormDumper(FormContentV1 formContent, ScriptingApiV1 api) {
+  AbstractFormDumper(FormContentV1 formContent, ScriptingApiV1 api, boolean includeMetadata = false) {
     // Note about why the api needs to be provided as a parameter:
     // The variable is made available in a script task as a variable set by the process engine, but it's not possible
     // to access it inside a class (like AbstractFormDumper), therefore it needs to be provided explicitly when
     // creating a FormDumper.
     this.api = api
+    this.includeMetadata = includeMetadata
 
     form = api.getForm(formContent.getFormId())
     form.setContent(formContent)
@@ -215,6 +222,50 @@ abstract class AbstractFormDumper {
     }
   }
 
+  /**
+   * Generates a map of metadata with entries for postfachHandleId, form id, creation date
+   * and the base64-encoded content of a binary content file named 'applicantFormAsPdf'.
+   *
+   * @return map of metadata
+   */
+  protected Map<String, String> collectMetadata(){
+    // TODO: Refactor
+    Map<String, String> metadata = new HashMap<>()
+
+    // Set dev or prod api url
+    Map<String, Object> processConfig = api.getVariable("processEngineConfig", Map)
+    String portal = processConfig.get("serviceportal.environment.main-portal-host").toString().trim()
+
+    // Determine the value for startedByUser based on the portal
+    StartedByUserV1 startedByUser
+    if (portal.contains("amt24") || portal.contains("service-bw")) {
+      startedByUser = api.getVariable("startedByUser", StartedByUserV1)
+    } else {
+      StartParameterV1 startParameter = api.getVariable("startParameter", StartParameterV1)
+      startedByUser = startParameter.startedByUser
+    }
+    String postfachHandle = startedByUser.postfachHandle
+    JsonSlurper jsonSlurper = new JsonSlurper()
+    def postfachHandleMap = jsonSlurper.parseText(postfachHandle)
+    String postfachHandleId = postfachHandleMap.id
+    metadata.put("postfachHandleId", postfachHandleId)
+
+    metadata.put("formId", formContent.formId)
+
+    SimpleDateFormat formatter = new SimpleDateFormat(iso8601Format)
+    String formattedCreationDate = formatter.format(new Date())
+    metadata.put("creationDate", formattedCreationDate)
+
+    BinaryContentV1 pdf = api.getVariable("applicantFormAsPdf", BinaryContentV1)
+    if (pdf != null && pdf.data != null) {
+      metadata.put("pdfApplicantFormBase64", pdf.data.encodeBase64().toString())
+    } else {
+      metadata.put("pdfApplicantFormBase64", null)
+    }
+
+    return metadata
+  }
+
   private static String generateCommaSeparatedListOfPossibleValueLabel(List<String> values, List<PossibleValueV1> pvList) {
     String result = ""
     boolean isFirst = true
@@ -250,4 +301,6 @@ abstract class AbstractFormDumper {
     }
     return result.strip()
   }
+
+
 }
