@@ -1,6 +1,7 @@
 package commons.serviceportal.forms.formdumper
 
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
+import de.seitenbau.serviceportal.scripting.api.v1.form.FieldGroupInstanceV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldTypeV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FormFieldKeyV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FormFieldV1
@@ -117,6 +118,30 @@ class XmlDumper extends AbstractFormDumper {
     return writer.toString()
   }
 
+  @Override
+  String metadataHook() {
+    return null
+  }
+
+  @Override
+  String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
+    return null
+  }
+
+  @Override
+  String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
+    return null
+  }
+
+  @Override
+  String fieldHook(String currentResult, FormFieldV1 field, FieldGroupInstanceV1 groupInstance) {
+    return null
+  }
+
+  @Override
+  String dumpingDoneHook(String currentResult) {
+    return null
+  }
 
   private String renderFieldForXmlOutput(FormFieldV1 field) {
     def value = field.value

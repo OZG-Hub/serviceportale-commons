@@ -1,7 +1,9 @@
 package commons.serviceportal.forms.formdumper
 
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
+import de.seitenbau.serviceportal.scripting.api.v1.form.FieldGroupInstanceV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldTypeV1
+import de.seitenbau.serviceportal.scripting.api.v1.form.FormFieldV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
 
@@ -37,68 +39,75 @@ class CsvDumper extends AbstractFormDumper {
    * Initialize a new CsvDumper.
    * @param formContent See {@link AbstractFormDumper#AbstractFormDumper(FormContentV1, ScriptingApiV1)}
    * @param api See {@link AbstractFormDumper#AbstractFormDumper(FormContentV1, ScriptingApiV1)}
+   * @param includeMetadata See {@link AbstractFormDumper#AbstractFormDumper(FormContentV1, ScriptingApiV1)}
    * @param separator A character to separate individual fields.
    *        Defaults to the comma "," (as described in RFC 4180).
    *        If the target audience uses MS Excel with a German language setting, it might be useful to overwrite that
    *          to a semicolon ";" instead.
    */
-  CsvDumper(FormContentV1 formContent, ScriptingApiV1 api, String separator = ",") {
-    super(formContent, api)
+  CsvDumper(FormContentV1 formContent, ScriptingApiV1 api, boolean includeMetadata, String separator = ",") {
+    super(formContent, api, includeMetadata)
 
     this.separator = separator
   }
 
-  /**
-   * Dump the form as a simple CSV String in which the first column contains the form field name
-   * and the second column the users input (as a technical value, e.g. "TRUE" / "FALSE" for
-   * Yes/No-fields and the selected value (not the label) in a radio button)
-   *
-   * @param withMetadata A boolean that controls whether metadata is added or not (default = false). The resulting data
-   * will be inserted at the beginning of the file
-   *
-   * @return A String of representing the CSV files content
-   */
-  @SuppressWarnings('GrDeprecatedAPIUsage')
-  // We need to support deprecated form field types as they might still be in use by older forms
-  String dump() {
+  @Override
+  String metadataHook() {
     String result = ""
 
-    form.groupInstances.each { groupInstance ->
-      groupInstance.rows.each { row ->
-        row.fields.each { field ->
-          if (shouldRenderField(field, groupInstance)) {
-            String fieldKey = groupInstance.id + ":" + groupInstance.index + ":" + field.id
-
-            String fieldValueAsString
-            switch (field.type) {
-              case FieldTypeV1.DATE:
-                fieldValueAsString = new SimpleDateFormat("yyyy-MM-dd").format(field.value as Date)
-                break
-              case FieldTypeV1.TIME:
-                fieldValueAsString = new SimpleDateFormat("HH:mm").format(field.value as Date)
-                break
-              case FieldTypeV1.FILE:
-                // Output is base64 encoded data
-                fieldValueAsString = (field.value as BinaryContentV1).data.encodeBase64()
-                break
-              case FieldTypeV1.MULTIPLE_FILE:
-                // Output is wrapped base64 encoded data Example: [abc123, def456]
-                List<BinaryContentV1> multiUpload = field.value
-                fieldValueAsString = "[${multiUpload.each { it.data.encodeBase64() }.join(",")}]"
-                break
-              default:
-                fieldValueAsString = field.value.toString()
-            }
-
-            result += fieldKey + separator + escapeForCsv(fieldValueAsString) + lineTerminator
-          }
-        }
-      }
+    collectMetadata().each {key, value ->
+      result += key + separator + escapeForCsv(value) + lineTerminator
     }
 
     return result
   }
 
+  @Override
+  String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
+    // No changes when a new group starts
+    return currentResult
+  }
+
+  @Override
+  String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
+    // No changes when a group ends
+    return currentResult
+  }
+
+  @Override
+  String fieldHook(String currentResult, FormFieldV1 field, FieldGroupInstanceV1 groupInstance) {
+    String fieldKey = groupInstance.id + ":" + groupInstance.index + ":" + field.id
+
+    String fieldValueAsString
+    switch (field.type) {
+      case FieldTypeV1.DATE:
+        fieldValueAsString = new SimpleDateFormat("yyyy-MM-dd").format(field.value as Date)
+        break
+      case FieldTypeV1.TIME:
+        fieldValueAsString = new SimpleDateFormat("HH:mm").format(field.value as Date)
+        break
+      case FieldTypeV1.FILE:
+        // Output is base64 encoded data
+        fieldValueAsString = (field.value as BinaryContentV1).data.encodeBase64()
+        break
+      case FieldTypeV1.MULTIPLE_FILE:
+        // Output is wrapped base64 encoded data Example: [abc123, def456]
+        List<BinaryContentV1> multiUpload = field.value
+        fieldValueAsString = "[${multiUpload.each { it.data.encodeBase64() }.join(",")}]"
+        break
+      default:
+        fieldValueAsString = field.value.toString()
+    }
+
+    currentResult += fieldKey + separator + escapeForCsv(fieldValueAsString) + lineTerminator
+    return currentResult
+  }
+
+  @Override
+  String dumpingDoneHook(String currentResult) {
+    // No need to do any changes
+    return currentResult
+  }
 
   private static String escapeForCsv(String stringToEscape) {
     // Normalize newline characters (CSV uses CRLF): Replace (Non-CR)LF with CRLF

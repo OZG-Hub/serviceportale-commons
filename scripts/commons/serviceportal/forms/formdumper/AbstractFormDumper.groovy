@@ -25,8 +25,6 @@ import java.text.SimpleDateFormat
  *
  * This abstract class holds shared functionality and provides a stable interface.
  *
- * Implementations of this class are supposed to have a dump() method (but this is not enforced by a abstract method as
- * the required parameters might vary by implementation.)
  */
 abstract class AbstractFormDumper {
   final protected FormV1 form
@@ -91,6 +89,85 @@ abstract class AbstractFormDumper {
     this.additionalLogicToHideContent = additionalLogicToHideContent
   }
 
+  /**
+   * Transforms the form content into another format, depending on the concrete Implementation (e.g. a
+   * {@link commons.serviceportal.forms.formdumper.XmlDumper} would create a String of a XML.)
+   *
+   * This works in the following way:
+   * - Iterate through grouping elements (like group instances, fields, etc)
+   * - Call a Hook for every grouping element and pass the current result to it
+   * - - Implementations of the AbstractFormDumper then implement that hook with format-specific logic.
+   *     A XmlDumper would create appropriate XML tags for instance.
+   * - Store the changed result and continue with the next grouping element
+   *
+   * @return
+   */
+  String dump() {
+    String result = ""
+
+    if (includeMetadata){
+      result = metadataHook()
+    }
+
+    form.groupInstances.each { groupInstance ->
+      result = groupInstanceBeginHook(result, groupInstance)
+
+      groupInstance.rows.each { row ->
+        row.fields.each { field ->
+
+          if (shouldRenderField(field, groupInstance)) {
+            result = fieldHook(result, field, groupInstance)
+          }
+
+        }
+      }
+
+      result = groupInstanceEndHook(result, groupInstance)
+    }
+
+    result = dumpingDoneHook(result)
+
+    return result
+  }
+
+  /**
+   * Called at the beginning of the dumping process, when the dumper should provide some additional metadata.
+   * (This hook is only called, if the FormDumper constructor's `includeMetadata` parameter was set to true.)
+   * @return
+   */
+  abstract String metadataHook()
+
+  /**
+   * Called at the begin of a group instance
+   * @param currentResult
+   * @param groupInstance
+   * @return
+   */
+  abstract String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance)
+
+  /**
+   * Called when a group is closing (before opening a new group, or finishing the entire dumping process)
+   * @param currentResult
+   * @param groupInstance
+   * @return
+   */
+  abstract String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance)
+
+  /**
+   * Called on every single individual field
+   * @param currentResult
+   * @param field
+   * @param groupInstance
+   * @return
+   */
+  abstract String fieldHook(String currentResult, FormFieldV1 field, FieldGroupInstanceV1 groupInstance)
+
+  /**
+   * Called at the end of the dumping process. Useful for removing trailing newlines or similar.
+   * @param currentResult
+   * @return
+   */
+  abstract String dumpingDoneHook(String currentResult)
 
   /**
    * Determines if a field should be rendered or not.
@@ -229,6 +306,8 @@ abstract class AbstractFormDumper {
    * @return map of metadata
    */
   protected Map<String, String> collectMetadata(){
+    final String iso8601Format = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
+
     // TODO: Refactor
     Map<String, String> metadata = new HashMap<>()
 
@@ -250,7 +329,7 @@ abstract class AbstractFormDumper {
     String postfachHandleId = postfachHandleMap.id
     metadata.put("postfachHandleId", postfachHandleId)
 
-    metadata.put("formId", formContent.formId)
+    metadata.put("formId", form.id)
 
     SimpleDateFormat formatter = new SimpleDateFormat(iso8601Format)
     String formattedCreationDate = formatter.format(new Date())

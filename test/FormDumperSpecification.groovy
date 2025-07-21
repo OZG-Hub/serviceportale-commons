@@ -19,12 +19,7 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormFieldContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.start.StartedByUserV1
-import spock.lang.Ignore
 import spock.lang.Specification
-
-import java.text.SimpleDateFormat
-
-import commons.serviceportal.forms.FormDumper
 
 class FormDumperSpecification extends Specification {
 
@@ -107,29 +102,20 @@ class FormDumperSpecification extends Specification {
     mockedApi.getVariable("applicantFormAsPdf", BinaryContentV1) >> mockedPdf
   }
 
-  // TODO: Re-Enable, once a common "with metadata" framework has been established
-  @Ignore
   def "dumping a simple input to a csv with metadata"() {
     given:
-    FormContentV1 mockedFormContent = Mock(FormContentV1, constructorArgs: ["mockedFormId"]) as FormContentV1
-    mockedFormContent.formId >> "6000357:testform:v1.0"
-    FormFieldContentV1 mockedFieldContent = Mock()
-    mockedFieldContent.value >> "Example input of a user"
-    mockedFormContent.fields >> ["exampleGroup:0:exampleField": mockedFieldContent]
+    String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
+    FormContentV1 formContent = JsonToFormContentConverter.convert(json)
 
-    byte[] pdfContent = getClass().getResourceAsStream("resources/dummy.pdf").readAllBytes()
-    String pdfContentBase64 = pdfContent.encodeBase64().toString()
-
-    FormDumper dumper = new FormDumper(mockedFormContent, mockedApi)
+    CsvDumper dumper = new CsvDumper(formContent, mockedApi, true)
 
     when:
-    String csv = dumper.dumpFormAsCsv(true)
+    String csv = dumper.dump()
 
     then:
-    csv.contains("postfachHandleId,\"ab0b63be-ee10-4740-b5e7-66aa81834510\"\r\n")
-    csv.contains("formId,\"6000357:testform:v1.0\"\r\n")
-    csv.contains("pdfApplicantFormBase64,\"" + pdfContentBase64 + "\"\r\n")
-    csv.contains("exampleGroup:0:exampleField,\"Example input of a user\"\r\n")
+    csv.contains('postfachHandleId,"ab0b63be-ee10-4740-b5e7-66aa81834510"\r\n')
+    csv.contains('formId,"6000357:testform:v1.0"\r\n')
+    csv.contains('mainGroupId:0:textfield,"Textfield content"\r\n')
   }
 
   def "dumping a simple input to a csv"() {
@@ -155,7 +141,7 @@ mainGroupId:0:money,"5.66"
 
 
     when:
-    CsvDumper dumper = new CsvDumper(formContent, mockedApi)
+    CsvDumper dumper = new CsvDumper(formContent, mockedApi, false)
     String csv = dumper.dump()
 
     then:
@@ -275,7 +261,7 @@ mainGroupId:0:money,"5.66"
     FormContentV1 formContent = JsonToFormContentConverter.convert(json)
 
     when:
-    HtmlDumper dumper = new HtmlDumper(formContent, mockedApi)
+    HtmlDumper dumper = new HtmlDumper(formContent, mockedApi, false)
     String html = dumper.dump()
 
     then:
@@ -297,7 +283,7 @@ mainGroupId:0:money,"5.66"
             FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1(new GregorianCalendar(2015, Calendar.JULY, 8).time, "DummyVerificationToken")).build())
 
     when:
-    HtmlDumper dumper = new HtmlDumper(formContent, mockedApi)
+    HtmlDumper dumper = new HtmlDumper(formContent, mockedApi, false)
     String html = dumper.dump()
 
     then:
@@ -319,7 +305,7 @@ mainGroupId:0:money,"5.66"
             FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1(null, "DummyVerificationToken")).build())
 
     when:
-    HtmlDumper dumper = new HtmlDumper(formContent, mockedApi)
+    HtmlDumper dumper = new HtmlDumper(formContent, mockedApi, false)
     String html = dumper.dump()
 
     then:
@@ -333,8 +319,8 @@ mainGroupId:0:money,"5.66"
     FormContentV1 formContent = JsonToFormContentConverter.convert(json)
 
     when:
-    TextDumper dumper = new TextDumper(formContent, mockedApi)
-    String output = dumper.dump(true, false)
+    TextDumper dumper = new TextDumper(formContent, mockedApi, false, true, false)
+    String output = dumper.dump()
 
     then:
     output == """\

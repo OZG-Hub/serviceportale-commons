@@ -4,7 +4,6 @@ import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldGroupInstanceV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldTypeV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FormFieldV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.FormRowV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGDIKMapContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGeoMapContentV1
@@ -54,96 +53,89 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
  * </table>
  */
 class HtmlDumper extends AbstractFormDumper {
-  HtmlDumper(FormContentV1 formContent, ScriptingApiV1 api) {
-    super(formContent, api)
-  }
+  final int baseHeadingLevel
 
   /**
-   * Dump the form as a HTML table.
-   * The table uses the CSS class "summary-form" that is provided by the serviceportal itself.
+   * Initialize a new HtmlDumper.
    *
-   * @param baseHeadingLevel the HTML-heading level (i.e. the "2" in "&lt;h2&gt;" used for the headings before each group
+   * @param formContent See {@link AbstractFormDumper#AbstractFormDumper(FormContentV1, ScriptingApiV1)}
+   * @param api See {@link AbstractFormDumper#AbstractFormDumper(FormContentV1, ScriptingApiV1)}
+   * @param includeMetadata See {@link AbstractFormDumper#AbstractFormDumper(FormContentV1, ScriptingApiV1)}
+   * @param param baseHeadingLevel the HTML-heading level (i.e. the "2" in "&lt;h2&gt;" used for the headings before each group
    *   instance)
-   * @return a String containing HTML code
    */
-  String dump(int baseHeadingLevel = 2) {
-    String result = ""
+  HtmlDumper(FormContentV1 formContent, ScriptingApiV1 api, boolean includeMetadata, int baseHeadingLevel = 2) {
+    super(formContent, api, includeMetadata)
 
-    form.groupInstances.each { groupInstance ->
-      String tableContent = dumpGroupInstance(groupInstance)
-
-      if (tableContent == null) {
-        // don't render the table for this group, as it does not contain anything.
-      } else {
-        result += "<h${baseHeadingLevel}>${groupInstance.title}</h${baseHeadingLevel}>"
-        // General headings for the instance
-        result += "<table class=\"summary-form\">"
-        result += "<thead><tr><th>Feld</th><th>Ihre Eingabe</th></tr></thead>"
-        result += "<tbody>"
-        result += tableContent
-        result += "</tbody>"
-        result += "</table>"
-      }
-    }
-
-    return result
+    this.baseHeadingLevel = baseHeadingLevel
   }
 
-  /**
-   * Dumps the content of a group as a String containing HTML-table-row (<tr>) and nested table-data (<td>) elements.
-   *
-   * @param groupInstance
-   * @return
-   */
-  private String dumpGroupInstance(FieldGroupInstanceV1 groupInstance) {
-    String result = ""
+  @Override
+  String metadataHook() {
+    throw new UnsupportedOperationException("HtmlDumper was configured to output metadata, but this option is not supported as users are generally not supposed to see their metadata. " +
+            "Consider if this actually what you want to do and the re-implement the metadataHook() if you want to continue.")
+  }
 
-    groupInstance.rows.each { FormRowV1 row ->
-      row.fields.each { FormFieldV1 field ->
-        // For rendering NPA fields hideDisabled must be false
-        if (shouldRenderField(field, groupInstance)) {
-          result += "<tr>"
+  @Override
+  String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
+    currentResult += "<h${baseHeadingLevel}>${groupInstance.title}</h${baseHeadingLevel}>"
+    // General headings for the instance
+    currentResult += "<table class=\"summary-form\">"
+    currentResult += "<thead><tr><th>Feld</th><th>Ihre Eingabe</th></tr></thead>"
+    currentResult += "<tbody>"
+    return currentResult
+  }
 
-          // Left column: The question
-          result += "<td>${field.label ?: ""}</td>"
+  @Override
+  String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
+    currentResult += "</tbody>"
+    currentResult += "</table>"
+    return currentResult
+  }
 
-          // Right column: The answer
-          result += "<td>"
+  @Override
+  String fieldHook(String currentResult, FormFieldV1 field, FieldGroupInstanceV1 groupInstance) {
+    currentResult += "<tr>"
+
+    // Left column: The question
+    currentResult += "<td>${field.label ?: ""}</td>"
+
+    // Right column: The answer
+    currentResult += "<td>"
 
 
-          switch (field.type) {
-            case FieldTypeV1.GEO_MAP:
-              // Special handling for GeoMap fields.
-              // Those fields are best represented as an image-HTML-tag with embedded data (rather than text)
-              BinaryGeoMapContentV1 fieldContent = field.value as BinaryGeoMapContentV1
-              result += generateEmbeddedImage(fieldContent.file)
-              break
-            case FieldTypeV1.GDIK_MAP:
-              // Special handling for GDIK map fields.
-              // Those fields are best represented as an image-HTML-tag with embedded data (rather than text)
-              BinaryGDIKMapContentV1 fieldContent = field.value as BinaryGDIKMapContentV1
-              for (file in fieldContent.files) {
-                result += generateEmbeddedImage(file)
-              }
-              break
-            default:
-              // Use a default String representation for this field
-              // Also escape the result of renderFieldForUserOutput as it might contain XSS content
-              result += api.stringUtils.escapeHtml(renderFieldForUserOutput(field))
-          }
-
-          result += "</td>"
-
-          result += "</tr>"
+    switch (field.type) {
+      case FieldTypeV1.GEO_MAP:
+        // Special handling for GeoMap fields.
+        // Those fields are best represented as an image-HTML-tag with embedded data (rather than text)
+        BinaryGeoMapContentV1 fieldContent = field.value as BinaryGeoMapContentV1
+        currentResult += generateEmbeddedImage(fieldContent.file)
+        break
+      case FieldTypeV1.GDIK_MAP:
+        // Special handling for GDIK map fields.
+        // Those fields are best represented as an image-HTML-tag with embedded data (rather than text)
+        BinaryGDIKMapContentV1 fieldContent = field.value as BinaryGDIKMapContentV1
+        for (file in fieldContent.files) {
+          currentResult += generateEmbeddedImage(file)
         }
-      }
+        break
+      default:
+        // Use a default String representation for this field
+        // Also escape the result of renderFieldForUserOutput as it might contain XSS content
+        currentResult += api.stringUtils.escapeHtml(renderFieldForUserOutput(field))
     }
 
-    if (result == "") {
-      return null
-    } else {
-      return result
-    }
+    currentResult += "</td>"
+
+    currentResult += "</tr>"
+
+    return currentResult
+  }
+
+  @Override
+  String dumpingDoneHook(String currentResult) {
+    // No need to do any changes
+    return currentResult
   }
 
   /**

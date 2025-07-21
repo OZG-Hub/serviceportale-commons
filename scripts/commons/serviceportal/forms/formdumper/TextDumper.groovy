@@ -1,8 +1,8 @@
 package commons.serviceportal.forms.formdumper
 
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
+import de.seitenbau.serviceportal.scripting.api.v1.form.FieldGroupInstanceV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FormFieldV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.FormRowV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
 
 /**
@@ -26,68 +26,82 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
  * </pre>
  */
 class TextDumper extends AbstractFormDumper {
+  final boolean printGroupHeadings
+  final boolean escapeHtml
+
 
   /**
    * Creates a new TextDumper.
    *
-   * @param formContent The form to transform
-   * @param api The API of the serviceportal. The only way to access this is via the variable "apiV1" that is available
-   *   in a script task.
-   */
-  TextDumper(FormContentV1 formContent, ScriptingApiV1 api) {
-    super(formContent, api)
-  }
-
-  /**
-   * Dump the content of a form as a human-readable text.
-   *
+   * @param formContent See {@link AbstractFormDumper#AbstractFormDumper(FormContentV1, ScriptingApiV1)}
+   * @param api See {@link AbstractFormDumper#AbstractFormDumper(FormContentV1, ScriptingApiV1)}
+   * @param includeMetadata See {@link AbstractFormDumper#AbstractFormDumper(FormContentV1, ScriptingApiV1)}
    * @param printGroupHeadings set to true if groups in the form should have headings.
    *   (Those heading do not have any special formatting. They simply show up as:
    *   "GroupInstanceName (GroupInstanceId):\n")
    * @param escapeHtml Whether to HTML-escape user input. Set to true, if you intend to display the output in a web
-   *   browser to avoid XSS.
-   * @return a String containing a human readable version of the form
+   *   browser to avoid XSS. Consider {@link HtmlDumper} as an alternative.
+   *
    */
-  String dump(boolean printGroupHeadings = true, boolean escapeHtml = true) {
-    String result = ""
+  TextDumper(FormContentV1 formContent,
+             ScriptingApiV1 api,
+             boolean includeMetadata,
+             boolean printGroupHeadings = true,
+             boolean escapeHtml = true) {
+    super(formContent, api, includeMetadata)
 
-    form.groupInstances.eachWithIndex { groupInstance, index ->
-      boolean groupIsEmpty = true
+    this.printGroupHeadings = printGroupHeadings
+    this.escapeHtml = escapeHtml
+  }
 
-      // Group heading
-      if (printGroupHeadings) {
-        String groupHeading = ""
-        if (!groupInstance.title.empty) {
-          groupHeading += groupInstance.title + " "
-        }
-        groupHeading += "(${groupInstance.id})"
-        groupHeading += ":\n"
-        result += groupHeading
-        groupIsEmpty = false
-      }
+  @Override
+  String metadataHook() {
+    String result = "Metadaten:\n"
 
-      groupInstance.rows.each { FormRowV1 row ->
-        row.fields.each { FormFieldV1 field ->
-          if (shouldRenderField(field, groupInstance)) {
-            String userInput = renderFieldForUserOutput(field)
-            if (escapeHtml) {
-              userInput = api.stringUtils.escapeHtml(userInput)
-            }
-
-            result += "  ${field.label} >>> $userInput <<<\n"
-            groupIsEmpty = false
-          }
-        }
-      }
-
-      if (!groupIsEmpty) // only print newlines, if there actually was something to separate
-        result += "\n"
+    collectMetadata().each { key, value ->
+      result += "  $key: >>> $value <<<\n"
     }
 
-    if (result.length() != 0) {
-      result = result.substring(0, result.length() - 1) // remove last newline
-    }
+    result += "\n" // Add extra newline to separate groups
+
     return result
   }
 
+  @Override
+  String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
+    String result = currentResult
+
+    if (printGroupHeadings) {
+      result += "${groupInstance.title} (${groupInstance.id}):\n"
+    }
+
+    return result
+  }
+
+  @Override
+  String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
+    // Add extra newline to separate groups
+    return currentResult + "\n"
+  }
+
+  @Override
+  String fieldHook(String currentResult, FormFieldV1 field, FieldGroupInstanceV1 groupInstance) {
+    String userInput = renderFieldForUserOutput(field)
+    if (escapeHtml) {
+      userInput = api.stringUtils.escapeHtml(userInput)
+    }
+
+    // Indent 2 spaces, then print label and user's input
+    currentResult += "  ${field.label} >>> $userInput <<<\n"
+    return currentResult
+  }
+
+  @Override
+  String dumpingDoneHook(String currentResult) {
+    // remove last newline
+    if (currentResult.length() != 0) {
+      currentResult = currentResult.substring(0, currentResult.length() - 1)
+    }
+    return currentResult
+  }
 }
