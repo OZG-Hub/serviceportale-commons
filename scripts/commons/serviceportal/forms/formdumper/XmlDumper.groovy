@@ -119,28 +119,29 @@ class XmlDumper extends AbstractFormDumper {
   }
 
   @Override
-  String metadataHook() {
+  protected String metadataHook(String currentResult) {
     return null
   }
 
   @Override
-  String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
+  protected String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
     return null
   }
 
   @Override
-  String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
+  protected String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
     return null
   }
 
   @Override
-  String fieldHook(String currentResult, FormFieldV1 field, FieldGroupInstanceV1 groupInstance) {
+  protected String fieldHook(String currentResult, FormFieldV1 field, FieldGroupInstanceV1 groupInstance) {
     return null
   }
 
   @Override
-  String dumpingDoneHook(String currentResult) {
+  protected String dumpingDoneHook(String currentResult) {
     return null
+    // TODO: pretty-print
   }
 
   private String renderFieldForXmlOutput(FormFieldV1 field) {

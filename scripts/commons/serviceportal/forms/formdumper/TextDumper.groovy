@@ -55,20 +55,20 @@ class TextDumper extends AbstractFormDumper {
   }
 
   @Override
-  String metadataHook() {
-    String result = "Metadaten:\n"
+  protected String metadataHook(String currentResult) {
+    currentResult += "Metadaten:\n"
 
     collectMetadata().each { key, value ->
-      result += "  $key: >>> $value <<<\n"
+      currentResult += "  $key: >>> $value <<<\n"
     }
 
-    result += "\n" // Add extra newline to separate groups
+    currentResult += "\n" // Add extra newline to separate groups
 
-    return result
+    return currentResult
   }
 
   @Override
-  String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
+  protected String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
     String result = currentResult
 
     if (printGroupHeadings) {
@@ -79,13 +79,13 @@ class TextDumper extends AbstractFormDumper {
   }
 
   @Override
-  String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
+  protected String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
     // Add extra newline to separate groups
     return currentResult + "\n"
   }
 
   @Override
-  String fieldHook(String currentResult, FormFieldV1 field, FieldGroupInstanceV1 groupInstance) {
+  protected String fieldHook(String currentResult, FormFieldV1 field, FieldGroupInstanceV1 groupInstance) {
     String userInput = renderFieldForUserOutput(field)
     if (escapeHtml) {
       userInput = api.stringUtils.escapeHtml(userInput)
@@ -97,7 +97,7 @@ class TextDumper extends AbstractFormDumper {
   }
 
   @Override
-  String dumpingDoneHook(String currentResult) {
+  protected String dumpingDoneHook(String currentResult) {
     // remove last newline
     if (currentResult.length() != 0) {
       currentResult = currentResult.substring(0, currentResult.length() - 1)

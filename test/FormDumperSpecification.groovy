@@ -341,6 +341,8 @@ content <<<
   Eurobetrag >>> 5.66 € <<<
 """
   }
+
+  // TODO: Add unit test for configureAdditionalHidingLogic feature
 }
 
 

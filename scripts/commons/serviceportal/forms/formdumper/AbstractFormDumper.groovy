@@ -94,6 +94,8 @@ abstract class AbstractFormDumper {
    * {@link commons.serviceportal.forms.formdumper.XmlDumper} would create a String of a XML.)
    *
    * This works in the following way:
+   * - Offer hooks to setup the resulting String
+   * - Offer hooks to add metadata
    * - Iterate through grouping elements (like group instances, fields, etc)
    * - Call a Hook for every grouping element and pass the current result to it
    * - - Implementations of the AbstractFormDumper then implement that hook with format-specific logic.
@@ -103,10 +105,10 @@ abstract class AbstractFormDumper {
    * @return
    */
   String dump() {
-    String result = ""
+    String result = dumpingStartHook()
 
     if (includeMetadata){
-      result = metadataHook()
+      result = metadataHook(result)
     }
 
     form.groupInstances.each { groupInstance ->
@@ -131,11 +133,21 @@ abstract class AbstractFormDumper {
   }
 
   /**
+   * Called at the beginning of the dumping process to setup the result object.
+   * Default implementation returns an empty String.
+   *
+   * @return
+   */
+  protected String dumpingStartHook(){
+    return ""
+  }
+
+  /**
    * Called at the beginning of the dumping process, when the dumper should provide some additional metadata.
    * (This hook is only called, if the FormDumper constructor's `includeMetadata` parameter was set to true.)
    * @return
    */
-  abstract String metadataHook()
+  protected abstract String metadataHook(String currentResult)
 
   /**
    * Called at the begin of a group instance
@@ -143,7 +155,7 @@ abstract class AbstractFormDumper {
    * @param groupInstance
    * @return
    */
-  abstract String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance)
+  protected abstract String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance)
 
   /**
    * Called when a group is closing (before opening a new group, or finishing the entire dumping process)
@@ -151,7 +163,7 @@ abstract class AbstractFormDumper {
    * @param groupInstance
    * @return
    */
-  abstract String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance)
+  protected abstract String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance)
 
   /**
    * Called on every single individual field
@@ -160,14 +172,18 @@ abstract class AbstractFormDumper {
    * @param groupInstance
    * @return
    */
-  abstract String fieldHook(String currentResult, FormFieldV1 field, FieldGroupInstanceV1 groupInstance)
+  protected abstract String fieldHook(String currentResult, FormFieldV1 field, FieldGroupInstanceV1 groupInstance)
 
   /**
    * Called at the end of the dumping process. Useful for removing trailing newlines or similar.
+   * The default implementation doesn't edit the result.
    * @param currentResult
    * @return
    */
-  abstract String dumpingDoneHook(String currentResult)
+  protected String dumpingDoneHook(String currentResult) {
+    // This default implementation just passes the current result through without any changes.
+    return currentResult
+  }
 
   /**
    * Determines if a field should be rendered or not.

@@ -52,30 +52,28 @@ class CsvDumper extends AbstractFormDumper {
   }
 
   @Override
-  String metadataHook() {
-    String result = ""
-
+  protected String metadataHook(String currentResult) {
     collectMetadata().each {key, value ->
-      result += key + separator + escapeForCsv(value) + lineTerminator
+      currentResult += key + separator + escapeForCsv(value) + lineTerminator
     }
 
-    return result
+    return currentResult
   }
 
   @Override
-  String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
+  protected String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
     // No changes when a new group starts
     return currentResult
   }
 
   @Override
-  String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
+  protected String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
     // No changes when a group ends
     return currentResult
   }
 
   @Override
-  String fieldHook(String currentResult, FormFieldV1 field, FieldGroupInstanceV1 groupInstance) {
+  protected String fieldHook(String currentResult, FormFieldV1 field, FieldGroupInstanceV1 groupInstance) {
     String fieldKey = groupInstance.id + ":" + groupInstance.index + ":" + field.id
 
     String fieldValueAsString
@@ -100,12 +98,6 @@ class CsvDumper extends AbstractFormDumper {
     }
 
     currentResult += fieldKey + separator + escapeForCsv(fieldValueAsString) + lineTerminator
-    return currentResult
-  }
-
-  @Override
-  String dumpingDoneHook(String currentResult) {
-    // No need to do any changes
     return currentResult
   }
 

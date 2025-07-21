@@ -71,13 +71,13 @@ class HtmlDumper extends AbstractFormDumper {
   }
 
   @Override
-  String metadataHook() {
+  protected String metadataHook(String currentResult) {
     throw new UnsupportedOperationException("HtmlDumper was configured to output metadata, but this option is not supported as users are generally not supposed to see their metadata. " +
             "Consider if this actually what you want to do and the re-implement the metadataHook() if you want to continue.")
   }
 
   @Override
-  String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
+  protected String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
     currentResult += "<h${baseHeadingLevel}>${groupInstance.title}</h${baseHeadingLevel}>"
     // General headings for the instance
     currentResult += "<table class=\"summary-form\">"
@@ -87,14 +87,14 @@ class HtmlDumper extends AbstractFormDumper {
   }
 
   @Override
-  String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
+  protected String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
     currentResult += "</tbody>"
     currentResult += "</table>"
     return currentResult
   }
 
   @Override
-  String fieldHook(String currentResult, FormFieldV1 field, FieldGroupInstanceV1 groupInstance) {
+  protected String fieldHook(String currentResult, FormFieldV1 field, FieldGroupInstanceV1 groupInstance) {
     currentResult += "<tr>"
 
     // Left column: The question
@@ -129,12 +129,6 @@ class HtmlDumper extends AbstractFormDumper {
 
     currentResult += "</tr>"
 
-    return currentResult
-  }
-
-  @Override
-  String dumpingDoneHook(String currentResult) {
-    // No need to do any changes
     return currentResult
   }
 
