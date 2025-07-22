@@ -2,10 +2,7 @@ package commons.serviceportal.forms.formdumper
 
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldGroupInstanceV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.FieldTypeV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.FormFieldKeyV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FormFieldV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.FormV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGeoMapContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
@@ -48,6 +45,16 @@ import java.text.SimpleDateFormat
  * </pre>
  */
 class XmlDumper extends AbstractFormDumper {
+  final static private String rootTag = "serviceportal"
+  final static private String fieldsTag = "serviceportal-fields"
+
+  /**
+   * XML tags can NOT start with a number, so we need to add a prefix like "instance_" to it.
+   */
+  final static private String instance_prefix = "instance_"
+
+  private boolean isFirstGroup = true
+  private String lastOpenedGroup = null
 
   /**
    * Initialize a new XmlDumper.
@@ -57,91 +64,99 @@ class XmlDumper extends AbstractFormDumper {
    */
   XmlDumper(FormContentV1 formContent, ScriptingApiV1 api, boolean includeMetadata = false) {
     super(formContent, api, includeMetadata)
-
   }
 
-  String dump() {
-    // TODO: Massively refactor - or delete completely if we implement the "abstract `eachNewGroup()` `eachSection` und `eachField()`" solution
-
-    StringWriter writer = new StringWriter()
-    MarkupBuilder xml = new MarkupBuilder(writer)
-
-
-    // TODO: Re-Implement iteration logic. Following same schema as TextDumper
-    Set<String> groups = form.fields.keySet().collect { return it.split(":")[0] }
-
-    xml."serviceportal"() {
-
-      // Add optional metadata
-      if (includeMetadata) {
-        Map<String, String> metadataMap = collectMetadata()
-        "metadata"() {
-          metadataMap.keySet().each { key ->
-            "${key}"(XmlUtil.escapeXml(metadataMap.get(key)))
-          }
-        }
-      }
-
-      "serviceportal-fields"() {
-        groups.each { group ->
-          assert group.matches("^[a-zA-Z_][\\w.-]*\$"): "Failed to create XML file. Group name '$group' is not a valid name for a XML node. Please change the group name."
-          "$group"() {
-            Set<Integer> groupInstances = formContent.fields.keySet().findAll { it.startsWith("$group:") }
-                    .collect { Integer.parseInt(it.split(":")[1]) }
-            groupInstances.each { groupInstance ->
-              // XML tags can NOT start with a number, so we need to add a prefix like "instance_" to it.
-              "instance_$groupInstance"() {
-
-                Set<String> fieldKeys = formContent.fields.keySet().findAll { it.startsWith("$group:$groupInstance:") }
-                fieldKeys.each { fullKey ->
-                  String fieldKey = fullKey.split(":")[2]
-                  assert fieldKey != null
-
-                  FormFieldV1 field = formAndMapping.getFieldInInstance(new FormFieldKeyV1(group, groupInstance, fieldKey))
-                  if (shouldRenderField(field)) {
-
-                    assert fieldKey.matches("^[a-zA-Z_][\\w.-]*\$"): "Failed to create XML file. Field name '$fieldKey' is not a valid name for a XML node. Please change the field name."
-
-                    // Add field to XML object
-                    "${fieldKey}" {
-                      mkp.yieldUnescaped(renderFieldForXmlOutput(field))
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    return writer.toString()
+  /**
+   * Called at the beginning of the dumping process to setup the result object.
+   * Default implementation returns an empty String.
+   *
+   * @return
+   */
+  @Override
+  protected String dumpingStartHook() {
+    return "<$rootTag>"
   }
 
   @Override
   protected String metadataHook(String currentResult) {
-    return null
+    // Prepare groovy structure for XmlOutput
+    def writer = new StringWriter()
+    def xml = new MarkupBuilder(writer)
+
+    Map<String, String> metadataMap = collectMetadata()
+    xml."metadata"() {
+      metadataMap.keySet().each { key ->
+        "${key}"(XmlUtil.escapeXml(metadataMap.get(key)))
+      }
+    }
+
+    // Output xml as String
+    return currentResult + writer.toString()
   }
 
   @Override
   protected String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
-    return null
+    if (isFirstGroup) {
+      // Open the tag for form fields, before printing the first group (i.e. only open it once)
+      currentResult += "<$fieldsTag>"
+      isFirstGroup = false
+    }
+
+    // Validate that the name of the instance is actually usable in XML.
+    String id = groupInstance.id
+    assert isValidXmlTagName(id): "Failed to create XML file. Group id '$id' is not a valid name for a XML node. Please change the group name."
+
+    if (lastOpenedGroup != id && lastOpenedGroup != null) {
+      // close previous open group tag as this one is no longer in use
+      currentResult += "</$lastOpenedGroup>"
+    }
+
+    // open tag for group, but only, if we are not in it already
+    if (lastOpenedGroup != id) {
+      currentResult += "<$id>"
+      lastOpenedGroup = id
+    }
+
+    // open tag for current instance
+    currentResult += "<${instance_prefix}${groupInstance.index}>"
+
+    return currentResult
   }
 
   @Override
   protected String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
-    return null
+    // close tag for current instance
+    currentResult += "</${instance_prefix}${groupInstance.index}>"
+    return currentResult
   }
 
   @Override
   protected String fieldHook(String currentResult, FormFieldV1 field, FieldGroupInstanceV1 groupInstance) {
-    return null
+    String id = field.id
+    assert isValidXmlTagName(id): "Failed to create XML file. Field name '$id' is not a valid name for a XML node. Please change the field name."
+
+    currentResult += "<$id>"
+    currentResult += renderFieldForXmlOutput(field)
+    currentResult += "</$id>"
+
+    return currentResult
   }
 
   @Override
   protected String dumpingDoneHook(String currentResult) {
-    return null
-    // TODO: pretty-print
+    currentResult += "</$lastOpenedGroup>"
+    currentResult += "</$fieldsTag>"
+    currentResult += "</$rootTag>"
+
+    // Sanity check: Verify the result is actually valid XML
+    try {
+      new XmlParser().parseText(currentResult)
+    } catch (Exception e) {
+      throw new Exception("Sanity check failed. XmlDumper did not generate valid XML. Please fix the FormDumper class.", e)
+    }
+
+    // Pretty print the result
+    return XmlUtil.serialize(currentResult)
   }
 
   private String renderFieldForXmlOutput(FormFieldV1 field) {
@@ -192,4 +207,21 @@ class XmlDumper extends AbstractFormDumper {
         return value.toString()
     }
   }
+
+  private static boolean isValidXmlTagName(String name) {
+    String xmlPattern = /^[A-Za-z_][\w.-]*$/
+
+    // Check if name follows basic valid XML name regex
+    if (!name.matches(xmlPattern)) {
+      return false
+    }
+
+    // Ensure name doesn't start with 'xml', case-insensitive
+    if (name.toLowerCase().startsWith("xml")) {
+      return false
+    }
+
+    return true
+  }
+
 }

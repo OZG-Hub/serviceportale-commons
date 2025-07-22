@@ -226,7 +226,7 @@ mainGroupId:0:money,"5.66"
     String pdfContentBase64 = pdfContent.encodeBase64().toString()
 
     when:
-    XmlDumper dumper = new XmlDumper(formContent, mockedApi)
+    XmlDumper dumper = new XmlDumper(formContent, mockedApi, true)
     String xml = dumper.dump()
     def parsed = new XmlSlurper().parseText(xml)
     def parsedMetadata = parsed.metadata
@@ -252,7 +252,7 @@ mainGroupId:0:money,"5.66"
 
     then:
     AssertionError e = thrown(AssertionError)
-    e.message == "Failed to create XML file. Field name '123illegalNameForXmlNode' is not a valid name for a XML node. Please change the field name.. Expression: fieldKey.matches(^[a-zA-Z_][\\w.-]*\$)"
+    e.message.contains("Failed to create XML file. Field name '123illegalNameForXmlNode' is not a valid name for a XML node. Please change the field name.")
   }
 
   def "dumping a form to HTML Table"() {

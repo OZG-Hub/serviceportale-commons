@@ -31,6 +31,8 @@ abstract class AbstractFormDumper {
   final protected ScriptingApiV1 api
   final protected boolean includeMetadata
 
+  final protected static String iso8601Format = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
+
   /**
    * Additional rules which decided if a field should be hidden. By default we show all fields.
    */
@@ -322,8 +324,6 @@ abstract class AbstractFormDumper {
    * @return map of metadata
    */
   protected Map<String, String> collectMetadata(){
-    final String iso8601Format = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
-
     // TODO: Refactor
     Map<String, String> metadata = new HashMap<>()
 
