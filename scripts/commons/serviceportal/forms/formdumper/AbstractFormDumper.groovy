@@ -311,7 +311,7 @@ abstract class AbstractFormDumper {
         BinaryGDIKMapContentV1 binaryGDIKMapContentValue = field.value as BinaryGDIKMapContentV1
         return "Nutzereingaben: '${binaryGDIKMapContentValue.json}', Auswahl von Elementen auf der Karte: '${binaryGDIKMapContentValue.selectionJson}'"
       default:
-        api.logger.warn("FormDumper.renderFieldForUserOutput does not know how to display this field '${field.type}' (${field.type.class.name}), " + "so it defaults to toString().")
+        api.logger.warn("AbstractFormDumper.renderFieldForUserOutput does not know how to display this field '${field.type}' (${field.type.class.name}), " + "so it defaults to toString().")
         return value.toString()
         break
     }

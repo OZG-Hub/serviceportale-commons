@@ -1,6 +1,7 @@
 import commons.serviceportal.forms.JsonToFormContentConverter
 import commons.serviceportal.forms.formdumper.CsvDumper
 import commons.serviceportal.forms.formdumper.HtmlDumper
+import commons.serviceportal.forms.formdumper.JsonDumper
 import commons.serviceportal.forms.formdumper.TextDumper
 import commons.serviceportal.forms.formdumper.XmlDumper
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
@@ -340,6 +341,40 @@ content <<<
   SelectOptions >>> second label <<<
   Eurobetrag >>> 5.66 € <<<
 """
+  }
+
+  def "dumping a form to JSON"() {
+    given:
+    String allFieldsFileContent = getClass().getResourceAsStream("resources/formContent_allFields.json").text
+    FormContentV1 formContent = JsonToFormContentConverter.convert(allFieldsFileContent)
+
+    when:
+    JsonDumper dumper = new JsonDumper(formContent, mockedApi, false, true)
+    String json = dumper.dump()
+
+    then:
+    json.contains('"mainGroupId_0_yesno": true')
+    json.contains('"mainGroupId_0_textfield": "Textfield content"')
+    json.contains('"mainGroupId_0_fileupload": "dummy.pdf"')
+    json.contains('"mainGroupId_0_date": "2015-08-09"')
+  }
+
+  def "dumping a form to JSON with metadata and complex file objects"() {
+    given:
+    String allFieldsFileContent = getClass().getResourceAsStream("resources/formContent_allFields.json").text
+    FormContentV1 formContent = JsonToFormContentConverter.convert(allFieldsFileContent)
+
+    when:
+    JsonDumper dumper = new JsonDumper(formContent, mockedApi, true, false)
+    String json = dumper.dump()
+
+    then:
+    json.contains('"formId": "6000357:testform:v1.0"')
+    json.contains('''\
+        "mainGroupId_0_fileupload": {
+            "filename": "dummy.pdf",
+            "fileAsBase64": "UERGIGNvbnRlbnQ="
+        }''')
   }
 
   // TODO: Add unit test for configureAdditionalHidingLogic feature

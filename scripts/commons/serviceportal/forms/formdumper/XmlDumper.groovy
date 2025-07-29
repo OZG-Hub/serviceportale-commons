@@ -152,7 +152,7 @@ class XmlDumper extends AbstractFormDumper {
     try {
       new XmlParser().parseText(currentResult)
     } catch (Exception e) {
-      throw new Exception("Sanity check failed. XmlDumper did not generate valid XML. Please fix the FormDumper class.", e)
+      throw new Exception("Sanity check failed. XmlDumper did not generate valid XML. Please fix the XmlDumper class.", e)
     }
 
     // Pretty print the result
@@ -203,7 +203,7 @@ class XmlDumper extends AbstractFormDumper {
         // JSON format is not predictable (see https://serviceportal-community.de/153, so just output the JSON as-is)
         return XmlUtil.escapeXml((value as BinaryGeoMapContentV1).json)
       default:
-        api.logger.warn("FormDumper.dumpAsFlatXml does not know how to display this class '${value.class}', " + "so it defaults to toString()")
+        api.logger.warn("XmlDumper.dumpAsFlatXml does not know how to display this class '${value.class}', " + "so it defaults to toString()")
         return value.toString()
     }
   }
