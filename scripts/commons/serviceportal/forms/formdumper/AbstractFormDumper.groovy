@@ -1,12 +1,7 @@
 package commons.serviceportal.forms.formdumper
 
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.FieldGroupInstanceV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.FieldTypeV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.FormFieldV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.FormV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.PossibleValueV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.VerifiedFormFieldValueV1
+import de.seitenbau.serviceportal.scripting.api.v1.form.*
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGDIKMapContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGeoMapContentV1
@@ -109,7 +104,7 @@ abstract class AbstractFormDumper {
   String dump() {
     String result = dumpingStartHook()
 
-    if (includeMetadata){
+    if (includeMetadata) {
       result = metadataHook(result)
     }
 
@@ -140,7 +135,7 @@ abstract class AbstractFormDumper {
    *
    * @return
    */
-  protected String dumpingStartHook(){
+  protected String dumpingStartHook() {
     return ""
   }
 
@@ -323,7 +318,7 @@ abstract class AbstractFormDumper {
    *
    * @return map of metadata
    */
-  protected Map<String, String> collectMetadata(){
+  protected Map<String, String> collectMetadata() {
     Map<String, String> metadata = new HashMap<>()
 
     // Set dev or prod api url
