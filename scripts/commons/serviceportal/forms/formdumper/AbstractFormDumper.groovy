@@ -324,7 +324,6 @@ abstract class AbstractFormDumper {
    * @return map of metadata
    */
   protected Map<String, String> collectMetadata(){
-    // TODO: Refactor
     Map<String, String> metadata = new HashMap<>()
 
     // Set dev or prod api url

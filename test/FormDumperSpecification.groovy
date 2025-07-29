@@ -377,7 +377,34 @@ content <<<
         }''')
   }
 
-  // TODO: Add unit test for configureAdditionalHidingLogic feature
+  def "hiding a specific field via the configureAdditionalHidingLogic logic"() {
+    given:
+    String allFieldsFileContent = getClass().getResourceAsStream("resources/formContent_allFields.json").text
+    FormContentV1 formContent = JsonToFormContentConverter.convert(allFieldsFileContent)
+    String fieldToHide = "textfield"
+    String expectedDifference = "Textfield >>> Textfield content <<<"
+
+    /**
+     * Hides field with the id of $fieldToHide
+     */
+    Closure<Boolean> additionalHidingLogic = {
+      //noinspection GroovyTrivialIf - better readability
+      if (it.id == fieldToHide) {
+        return true
+      } else {
+        return false
+      }
+    }
+
+    when:
+    TextDumper dumperWithLogic = new TextDumper(formContent, mockedApi, false)
+    dumperWithLogic.configureAdditionalHidingLogic  additionalHidingLogic
+    TextDumper dumperWithoutLogic = new TextDumper(formContent, mockedApi, false)
+
+    then:
+    !dumperWithLogic.dump().contains(expectedDifference)
+    dumperWithoutLogic.dump().contains(expectedDifference)
+  }
 }
 
 
