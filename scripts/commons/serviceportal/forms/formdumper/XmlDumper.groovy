@@ -160,7 +160,7 @@ class XmlDumper extends AbstractFormDumper {
   }
 
   private String renderFieldForXmlOutput(FormFieldV1 field) {
-    def value = field.value
+    def value = getValueFromField(field)
 
     if (value == null) {
       return "" // Empty fields have empty strings

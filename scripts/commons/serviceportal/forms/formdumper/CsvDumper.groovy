@@ -94,7 +94,7 @@ class CsvDumper extends AbstractFormDumper {
         fieldValueAsString = "[${multiUpload.each { it.data.encodeBase64() }.join(",")}]"
         break
       default:
-        fieldValueAsString = field.value.toString()
+        fieldValueAsString = getValueFromField(field).toString()
     }
 
     currentResult += fieldKey + separator + escapeForCsv(fieldValueAsString) + lineTerminator

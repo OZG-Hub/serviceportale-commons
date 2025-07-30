@@ -232,13 +232,7 @@ abstract class AbstractFormDumper {
   @SuppressWarnings('GrDeprecatedAPIUsage')
   // We need to support deprecated form field types as they might still be in use by older forms
   protected String renderFieldForUserOutput(FormFieldV1 field) {
-    Object value = field.value
-
-    // If fields are filled by "Vertrauensniveaus", their value turn into VerifiedFormFieldValueV1 (which breaks the
-    // other parts of this function). Therefore we turn those values back into their actual content.
-    if (value instanceof VerifiedFormFieldValueV1) {
-      value = ((VerifiedFormFieldValueV1) value).value
-    }
+    def value = getValueFromField(field)
 
     if (value == null || value.toString().isAllWhitespace()) {
       return "[Keine Eingabe]"
@@ -353,6 +347,30 @@ abstract class AbstractFormDumper {
     }
 
     return metadata
+  }
+
+  /**
+   * This function returns the value of a field in a reasonable format (depending on the fields type. String for text
+   * fields, Date for date fields, …)
+   *
+   * This function also takes care of unwrapping fields with attached "Vertrauensniveaus", which would hide the actual
+   * value of a field if used.
+   */
+  protected static def getValueFromField(FormFieldV1 field) {
+    def value = field.value
+
+    if (value == null) {
+      // Exit immediately, don't attempt to parse the content further.
+      return value
+    }
+
+    // If fields are filled by "Vertrauensniveaus", their value turn into VerifiedFormFieldValueV1 (which breaks the
+    // other parts of this function). Therefore we turn those values back into their actual content.
+    if (value.class == VerifiedFormFieldValueV1) {
+      value = value.value
+    }
+
+    return value
   }
 
   private static String generateCommaSeparatedListOfPossibleValueLabel(List<String> values, List<PossibleValueV1> pvList) {

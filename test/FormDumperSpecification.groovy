@@ -78,6 +78,7 @@ class FormDumperSpecification extends Specification {
     addFieldToInstance(fieldGroupInstance, "selectOptions", FieldTypeV1.DROPDOWN_SINGLE_SELECT, "SelectOptions")
     fieldGroupInstance.getField("selectOptions").setPossibleValues(pvList)
     addFieldToInstance(fieldGroupInstance, "money", FieldTypeV1.EURO_BETRAG, "Eurobetrag")
+    addFieldToInstance(fieldGroupInstance, "name", FieldTypeV1.STRING, "Name")
 
     mockedApi.getVariable("processEngineConfig", Map) >> ["serviceportal.environment.main-portal-host": "dev.service-bw.de"]
 
@@ -116,7 +117,7 @@ class FormDumperSpecification extends Specification {
     then:
     csv.contains('postfachHandleId,"ab0b63be-ee10-4740-b5e7-66aa81834510"\r\n')
     csv.contains('formId,"6000357:testform:v1.0"\r\n')
-    csv.contains('mainGroupId:0:textfield,"Textfield content"\r\n')
+    csv.contains('mainGroupId:0:textfield,"Textfield content with <html>HTML</html>"\r\n')
   }
 
   def "dumping a simple input to a csv"() {
@@ -127,7 +128,7 @@ class FormDumperSpecification extends Specification {
 mainGroupId:0:time,"10:44"
 mainGroupId:0:yesno,"true"
 mainGroupId:0:npa,"false"
-mainGroupId:0:textfield,"Textfield content"
+mainGroupId:0:textfield,"Textfield content with <html>HTML</html>"
 mainGroupId:0:simpleCheckbox,"true"
 mainGroupId:0:radioButtons,"firstOption"
 mainGroupId:0:textarea,"Textarea
@@ -138,6 +139,7 @@ mainGroupId:0:fileupload,"UERGIGNvbnRlbnQ="
 mainGroupId:0:date,"2015-08-09"
 mainGroupId:0:selectOptions,"secondOption"
 mainGroupId:0:money,"5.66"
+mainGroupId:0:name,"Testname"
 '''.replace("\n", "\r\n")
 
 
@@ -175,7 +177,7 @@ mainGroupId:0:money,"5.66"
     def parsedGroupInstance = parsed."serviceportal-fields".mainGroupId.instance_0
 
     then:
-    parsedGroupInstance.textfield == "Textfield content"
+    parsedGroupInstance.textfield == "Textfield content with <html>HTML</html>"
     parsedGroupInstance.textarea == "Textarea\ncontent"
 
     // File Upload
@@ -196,6 +198,9 @@ mainGroupId:0:money,"5.66"
     // Multiselect
     parsedGroupInstance.multiselect.selectedValue[0] == "firstOption"
     parsedGroupInstance.multiselect.selectedValue[1] == "secondOption"
+
+    // Trust level
+    parsedGroupInstance.name == "Testname"
 
     parsedGroupInstance.date == "2015-08-09T00:00:00.000+02:00"
     parsedGroupInstance.time == "1970-01-01T10:44:00.000+01:00"
@@ -329,7 +334,7 @@ Main Group (mainGroupId):
   Time >>> 10:44 <<<
   Yes/No >>> Ja <<<
   NPA >>> Sie waren NICHT mit dem neuem Personalausweis angemeldet <<<
-  Textfield >>> Textfield content <<<
+  Textfield >>> Textfield content with <html>HTML</html> <<<
   Sinple Checkbox >>> Ja <<<
   Radio Buttons >>> first label <<<
   Textarea >>> Textarea
@@ -340,6 +345,7 @@ content <<<
   Date >>> 09.08.2015 <<<
   SelectOptions >>> second label <<<
   Eurobetrag >>> 5.66 € <<<
+  Name >>> Testname <<<
 """
   }
 
@@ -354,7 +360,7 @@ content <<<
 
     then:
     json.contains('"mainGroupId_0_yesno": true')
-    json.contains('"mainGroupId_0_textfield": "Textfield content"')
+    json.contains('"mainGroupId_0_textfield": "Textfield content with <html>HTML</html>"')
     json.contains('"mainGroupId_0_fileupload": "dummy.pdf"')
     json.contains('"mainGroupId_0_date": "2015-08-09"')
   }
@@ -382,7 +388,7 @@ content <<<
     String allFieldsFileContent = getClass().getResourceAsStream("resources/formContent_allFields.json").text
     FormContentV1 formContent = JsonToFormContentConverter.convert(allFieldsFileContent)
     String fieldToHide = "textfield"
-    String expectedDifference = "Textfield >>> Textfield content <<<"
+    String expectedDifference = "Textfield >>> Textfield content with <html>HTML</html> <<<"
 
     /**
      * Hides field with the id of $fieldToHide
@@ -397,9 +403,9 @@ content <<<
     }
 
     when:
-    TextDumper dumperWithLogic = new TextDumper(formContent, mockedApi, false)
+    TextDumper dumperWithLogic = new TextDumper(formContent, mockedApi, false, true, false)
     dumperWithLogic.configureAdditionalHidingLogic  additionalHidingLogic
-    TextDumper dumperWithoutLogic = new TextDumper(formContent, mockedApi, false)
+    TextDumper dumperWithoutLogic = new TextDumper(formContent, mockedApi, false, true, false)
 
     then:
     !dumperWithLogic.dump().contains(expectedDifference)

@@ -4,7 +4,6 @@ import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldGroupInstanceV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldTypeV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FormFieldV1
-import de.seitenbau.serviceportal.scripting.api.v1.form.VerifiedFormFieldValueV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGDIKMapContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGeoMapContentV1
@@ -121,11 +120,7 @@ class JsonDumper extends AbstractFormDumper {
         break
       default:
         // For most fields it makes sense to use the return values as is
-        if (field.value.class == VerifiedFormFieldValueV1) {
-          fieldsBuffer.put(fieldId, (field.value as VerifiedFormFieldValueV1).value)
-        } else {
-          fieldsBuffer.put(fieldId, field.value)
-        }
+        fieldsBuffer.put(fieldId, getValueFromField(field))
         break
     }
 

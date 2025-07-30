@@ -1,6 +1,7 @@
 package commons.serviceportal.forms
 
 import de.seitenbau.serviceportal.scripting.api.v1.form.PossibleValueV1
+import de.seitenbau.serviceportal.scripting.api.v1.form.VerifiedFormFieldValueV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormFieldContentV1
@@ -60,6 +61,15 @@ class JsonToFormContentConverter {
               byte[] data = (unparsed.data as ArrayList) as byte[]
               BinaryContentV1 bc = new BinaryContentV1(bcKey, uploadedFilename, label, mimetype, data)
               formFieldContentMap.value = bc
+            }
+
+            // check if this field could be a VerifiedFormFieldValueV1
+            if (formFieldContentMap.value != null && formFieldContentMap.value instanceof Map && formFieldContentMap.value.get("verificationToken") != null) {
+              def unparsed = formFieldContentMap.value
+              def newValue = unparsed.value
+              String verificationToken = unparsed.verificationToken
+              VerifiedFormFieldValueV1 verifiedFormFieldValueV1 = new VerifiedFormFieldValueV1(newValue, verificationToken)
+              formFieldContentMap.value = verifiedFormFieldValueV1
             }
 
             // formFieldContentMap and possibleValues are LazyMaps (from JSON)!
