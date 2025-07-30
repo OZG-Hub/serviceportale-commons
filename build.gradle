@@ -8,7 +8,7 @@ repositories {
 
 // The the serviceportale public API is maintained by the "Schildkröten" Team and the most recent version listed on
 // maven central: https://central.sonatype.com/artifact/de.seitenbau.serviceportal/prozess-scripting-api
-String serviceportalPublicApiVersion = "1.193.12"
+String serviceportalPublicApiVersion = "1.195.8"
 dependencies {
   [
           'org.codehaus.groovy:groovy-all:2.5.22',

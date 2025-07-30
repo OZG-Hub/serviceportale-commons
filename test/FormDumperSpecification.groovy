@@ -1,4 +1,9 @@
 import commons.serviceportal.forms.JsonToFormContentConverter
+import commons.serviceportal.forms.formdumper.CsvDumper
+import commons.serviceportal.forms.formdumper.HtmlDumper
+import commons.serviceportal.forms.formdumper.JsonDumper
+import commons.serviceportal.forms.formdumper.TextDumper
+import commons.serviceportal.forms.formdumper.XmlDumper
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.StringUtilsApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldGroupInstanceV1
@@ -17,25 +22,19 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormFieldContent
 import de.seitenbau.serviceportal.scripting.api.v1.start.StartedByUserV1
 import spock.lang.Specification
 
-import java.text.SimpleDateFormat
-
-import commons.serviceportal.forms.FormDumper
-
 class FormDumperSpecification extends Specification {
 
   public static final String MAIN_GROUP_ID = "mainGroupId"
   private static ScriptingApiV1 mockedApi
 
-  void addFieldToInstance(FieldGroupInstanceV1 groupInstance, String fieldId, FieldTypeV1 type, String label)
-  {
+  void addFieldToInstance(FieldGroupInstanceV1 groupInstance, String fieldId, FieldTypeV1 type, String label) {
     FormFieldV1 field = new FormFieldV1(fieldId, type)
     field.setLabel(label)
     FormRowV1 row = FormRowV1.builder().fields([field]).build()
     groupInstance.getRows().add(row)
   }
 
-  FormV1 createEmptyForm()
-  {
+  FormV1 createEmptyForm() {
     FormV1 form = new FormV1("6000357:testform:v1.0")
     FieldGroupV1 fieldGroup = new FieldGroupV1(MAIN_GROUP_ID)
     FormSectionV1 section = FormSectionV1.builder().fieldGroups([fieldGroup]).build()
@@ -81,83 +80,78 @@ class FormDumperSpecification extends Specification {
     addFieldToInstance(fieldGroupInstance, "money", FieldTypeV1.EURO_BETRAG, "Eurobetrag")
     addFieldToInstance(fieldGroupInstance, "name", FieldTypeV1.STRING, "Name")
 
-    mockedApi.getVariable("processEngineConfig", Map) >> ["serviceportal.environment.main-portal-host":"dev.service-bw.de"]
+    mockedApi.getVariable("processEngineConfig", Map) >> ["serviceportal.environment.main-portal-host": "dev.service-bw.de"]
 
     mockedApi.getForm("6000357:testform:v1.0") >> form
 
     // Mock api for metadata
-    StartedByUserV1 startedByUser = new StartedByUserV1("1","user","user", "user", "{\"@type\":\"nkb\",\"id\":\"ab0b63be-ee10-4740-b5e7-66aa81834510\"}")
+    StartedByUserV1 startedByUser = new StartedByUserV1("1", "user", "user", "user", "{\"@type\":\"nkb\",\"id\":\"ab0b63be-ee10-4740-b5e7-66aa81834510\"}")
     mockedApi.getVariable("startedByUser", StartedByUserV1) >> startedByUser
 
-    byte[] pdfContent = getClass().getResourceAsStream("resources/dummy.pdf").readAllBytes()
-    BinaryContentV1 mockedPdf = new BinaryContentV1("key","dummy.pdf","label","application/pdf", pdfContent)
-    mockedApi.getVariable("applicantFormAsPdf", BinaryContentV1) >> mockedPdf
+    // Mock escapeHtml function
+    StringUtilsApiV1 mockedStringUtils = Mock(StringUtilsApiV1)
+    mockedApi.stringUtils >> mockedStringUtils
+    mockedStringUtils.escapeHtml(_) >> { args ->
+      return ((String) args[0])
+              .replace('<', "&lt;")
+              .replace('>', "&gt;")
+              .replace('"', '&quot;')
+              .replace('€', "&euro;")
+    }
 
-    StringUtilsApiV1 mockedStringUtilsApiV1 = Mock(StringUtilsApiV1)
-    mockedApi.getStringUtils() >> mockedStringUtilsApiV1
-    mockedStringUtilsApiV1.escapeHtml(_) >> { args -> return ((String) args[0])
-            .replace('<', "&lt;")
-            .replace('>', "&gt;")
-            .replace('"', '&quot;')
-            .replace('€', "&euro;") }
+    byte[] pdfContent = getClass().getResourceAsStream("resources/dummy.pdf").readAllBytes()
+    BinaryContentV1 mockedPdf = new BinaryContentV1("key", "dummy.pdf", "label", "application/pdf", pdfContent)
+    mockedApi.getVariable("applicantFormAsPdf", BinaryContentV1) >> mockedPdf
   }
 
   def "dumping a simple input to a csv with metadata"() {
     given:
-    FormContentV1 mockedFormContent = Mock(FormContentV1, constructorArgs: ["mockedFormId"]) as FormContentV1
-    mockedFormContent.formId >> "6000357:testform:v1.0"
-    FormFieldContentV1 mockedFieldContent = Mock()
-    mockedFieldContent.value >> "Example input of a user"
-    mockedFormContent.fields >> ["exampleGroup:0:exampleField": mockedFieldContent]
+    String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
+    FormContentV1 formContent = JsonToFormContentConverter.convert(json)
 
-    byte[] pdfContent = getClass().getResourceAsStream("resources/dummy.pdf").readAllBytes()
-    String pdfContentBase64 = pdfContent.encodeBase64().toString()
-
-    FormDumper dumper = new FormDumper(mockedFormContent, mockedApi)
+    CsvDumper dumper = new CsvDumper(formContent, mockedApi, true)
 
     when:
-    String csv = dumper.dumpFormAsCsv(true)
+    String csv = dumper.dump()
 
     then:
-    csv.contains("postfachHandleId,\"ab0b63be-ee10-4740-b5e7-66aa81834510\"\r\n")
-    csv.contains("formId,\"6000357:testform:v1.0\"\r\n")
-    csv.contains("pdfApplicantFormBase64,\"" + pdfContentBase64 + "\"\r\n")
-    csv.contains("exampleGroup:0:exampleField,\"Example input of a user\"\r\n")
+    csv.contains('postfachHandleId,"ab0b63be-ee10-4740-b5e7-66aa81834510"\r\n')
+    csv.contains('formId,"6000357:testform:v1.0"\r\n')
+    csv.contains('mainGroupId:0:textfield,"Textfield content with <html>HTML</html>"\r\n')
   }
 
   def "dumping a simple input to a csv"() {
     given:
-    FormContentV1 mockedFormContent = Mock(FormContentV1, constructorArgs: ["mockedFormId"]) as FormContentV1
-    FormFieldContentV1 mockedFieldContent = Mock()
-    mockedFieldContent.value >> "Example input of a user"
-    mockedFormContent.fields >> ["exampleGroup:0:exampleField": mockedFieldContent]
+    String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
+    FormContentV1 formContent = JsonToFormContentConverter.convert(json)
+    String expected = '''\
+mainGroupId:0:time,"10:44:00"
+mainGroupId:0:yesno,"true"
+mainGroupId:0:npa,"false"
+mainGroupId:0:textfield,"Textfield content with <html>HTML</html>"
+mainGroupId:0:simpleCheckbox,"true"
+mainGroupId:0:radioButtons,"firstOption"
+mainGroupId:0:textarea,"Textarea
+content"
+mainGroupId:0:multiselect,"[firstOption, secondOption]"
+mainGroupId:0:checkboxList,"[firstOption, secondOption]"
+mainGroupId:0:fileupload,"UERGIGNvbnRlbnQ="
+mainGroupId:0:date,"2015-08-09"
+mainGroupId:0:selectOptions,"secondOption"
+mainGroupId:0:money,"5.66"
+mainGroupId:0:name,"Testname"
+'''.replace("\n", "\r\n")
 
-    FormDumper dumper = new FormDumper(mockedFormContent, mockedApi)
-
-    when:
-    String csv = dumper.dumpFormAsCsv()
-
-    then:
-    csv == "exampleGroup:0:exampleField,\"Example input of a user\"\r\n"
-  }
-
-  def "dumping input that needs escaping to a csv"() {
-    given:
-    FormContentV1 mockedFormContent = Mock(FormContentV1, constructorArgs: ["mockedFormId"]) as FormContentV1
-    FormFieldContentV1 mockedFieldContent = Mock()
-    mockedFieldContent.value >> "Input with a \"quote\", a comma and nothing else."
-    mockedFormContent.fields >> ["exampleGroup:0:exampleField": mockedFieldContent]
-
-    FormDumper dumper = new FormDumper(mockedFormContent, mockedApi)
 
     when:
-    String csv = dumper.dumpFormAsCsv()
+    CsvDumper dumper = new CsvDumper(formContent, mockedApi, false)
+    String csv = dumper.dump()
 
     then:
-    csv == "exampleGroup:0:exampleField,\"Input with a \"\"quote\"\", a comma and nothing else.\"\r\n"
+    csv == expected
   }
 
-  def "Escaping unsecure content"() {
+  def "Escaping unsecure content for CSV export"() {
     // As reported in https://tracker.seitenbau.net/browse/SKDE-1303
 
     given:
@@ -165,35 +159,10 @@ class FormDumperSpecification extends Specification {
 
     when:
     //noinspection GroovyAccessibility - just a unit test (for a private method. But that's OK)
-    String escaped = FormDumper.escapeForCsv(evil)
+    String escaped = CsvDumper.escapeForCsv(evil)
 
     then:
     escaped == '"evil\\"",neue spalte"'
-  }
-
-  def "dumping input to a csv with the class name"() {
-    given:
-    FormContentV1 mockedFormContent = Mock(FormContentV1, constructorArgs: ["mockedFormId"]) as FormContentV1
-    FormFieldContentV1 mockedStringField = Mock()
-    FormFieldContentV1 mockedDateField = Mock()
-
-    mockedStringField.value >> "Input with a \"quote\", a comma and nothing else."
-    mockedDateField.value >> new SimpleDateFormat("yyyy-MM-dd").parse("2019-01-01")
-    mockedFormContent.fields >> [
-            "exampleGroup:0:stringField": mockedStringField,
-            "exampleGroup:0:dateField"  : mockedDateField
-    ]
-
-    FormDumper dumper = new FormDumper(mockedFormContent, mockedApi)
-
-    when:
-    String csv = dumper.dumpFormAsCsvWithDatatype()
-    String firstLine = csv.split("\r\n")[0]
-    String secondLine = csv.split("\r\n")[1]
-
-    then:
-    firstLine == /exampleGroup:0:stringField,String,"Input with a ""quote"", a comma and nothing else."/
-    secondLine.matches("exampleGroup:0:dateField,Date,\"Tue Jan 01 00:00:00 (.*) 2019\"") // don't care about the time zone
   }
 
   def "dumping a form to XML"() {
@@ -202,8 +171,8 @@ class FormDumperSpecification extends Specification {
     FormContentV1 formContent = JsonToFormContentConverter.convert(json)
 
     when:
-    FormDumper dumper = new FormDumper(formContent, mockedApi)
-    String xml = dumper.dumpAsXml()
+    XmlDumper dumper = new XmlDumper(formContent, mockedApi)
+    String xml = dumper.dump()
     def parsed = new XmlSlurper().parseText(xml)
     def parsedGroupInstance = parsed."serviceportal-fields".mainGroupId.instance_0
 
@@ -233,8 +202,8 @@ class FormDumperSpecification extends Specification {
     // Trust level
     parsedGroupInstance.name == "Testname"
 
-    parsedGroupInstance.date == "2015-08-09T00:00:00.000+02:00"
-    parsedGroupInstance.time == "1970-01-01T10:44:00.000+01:00"
+    parsedGroupInstance.date == "2015-08-09"
+    parsedGroupInstance.time == "10:44:00"
     parsedGroupInstance.money == "5.66"
     parsedGroupInstance.npa == false
   }
@@ -245,13 +214,13 @@ class FormDumperSpecification extends Specification {
     FormContentV1 formContent = JsonToFormContentConverter.convert(json)
 
     when:
-    FormDumper dumper = new FormDumper(formContent, mockedApi)
-    String xmlWithMetadata = dumper.dumpAsXml(true)
-    String xmlWithoutMetadata = dumper.dumpAsXml(false)
+    String xmlNoMetadata = new XmlDumper(formContent, mockedApi, true).dump()
+    String xmlWithMetadata = new XmlDumper(formContent, mockedApi, false).dump()
     def parsedWithMetadata = new XmlSlurper().parseText(xmlWithMetadata)
-    def parsedWithoutMetadata = new XmlSlurper().parseText(xmlWithoutMetadata)
+    def parsedNoMetadata = new XmlSlurper().parseText(xmlNoMetadata)
+
     then:
-    parsedWithMetadata."serviceportal-fields" == parsedWithoutMetadata."serviceportal-fields"
+    parsedWithMetadata."serviceportal-fields" == parsedNoMetadata."serviceportal-fields"
   }
 
   def "dumping a form to XML with metadata"() {
@@ -263,8 +232,8 @@ class FormDumperSpecification extends Specification {
     String pdfContentBase64 = pdfContent.encodeBase64().toString()
 
     when:
-    FormDumper dumper = new FormDumper(formContent, mockedApi)
-    String xml = dumper.dumpAsXml(true)
+    XmlDumper dumper = new XmlDumper(formContent, mockedApi, true)
+    String xml = dumper.dump()
     def parsed = new XmlSlurper().parseText(xml)
     def parsedMetadata = parsed.metadata
 
@@ -273,8 +242,6 @@ class FormDumperSpecification extends Specification {
     parsedMetadata.formId == "6000357:testform:v1.0"
     parsedMetadata.pdfApplicantFormBase64 == pdfContentBase64
   }
-
-
 
   def "dumping a form with an illegally named placeholder field to XML"() {
     given:
@@ -286,12 +253,12 @@ class FormDumperSpecification extends Specification {
     addFieldToInstance(form.getGroupInstance(MAIN_GROUP_ID, 0), "123illegalNameForXmlNode", FieldTypeV1.STRING, null)
 
     when:
-    FormDumper dumper = new FormDumper(formContent, mockedApi)
-    dumper.dumpAsXml()
+    XmlDumper dumper = new XmlDumper(formContent, mockedApi)
+    dumper.dump()
 
     then:
     AssertionError e = thrown(AssertionError)
-    e.message == "Failed to create XML file. Field name '123illegalNameForXmlNode' is not a valid name for a XML node. Please change the field name.. Expression: fieldKey.matches(^[a-zA-Z_][\\w.-]*\$)"
+    e.message.contains("Failed to create XML file. Field name '123illegalNameForXmlNode' is not a valid name for a XML node. Please change the field name.")
   }
 
   def "dumping a form to HTML Table"() {
@@ -300,8 +267,8 @@ class FormDumperSpecification extends Specification {
     FormContentV1 formContent = JsonToFormContentConverter.convert(json)
 
     when:
-    FormDumper dumper = new FormDumper(formContent, mockedApi)
-    String html = dumper.dumpFormAsHtmlTable()
+    HtmlDumper dumper = new HtmlDumper(formContent, mockedApi, false)
+    String html = dumper.dump()
 
     then:
     def expectedHtml = new File('test/resources/expected.html').text.replaceAll("\n *<", "<")
@@ -312,18 +279,18 @@ class FormDumperSpecification extends Specification {
     given:
     FormContentV1 formContent = new FormContentV1("6000357:testform:v1.0")
     formContent.fields.put(
-        MAIN_GROUP_ID + ":0:textfield",
-        FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1("textfieldContent", "DummyVerificationToken")).build())
+            MAIN_GROUP_ID + ":0:textfield",
+            FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1("textfieldContent", "DummyVerificationToken")).build())
     formContent.fields.put(
             MAIN_GROUP_ID + ":0:textarea",
             FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1("textareaContent", "DummyVerificationToken")).build())
     formContent.fields.put(
-        MAIN_GROUP_ID + ":0:date",
-        FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1(new GregorianCalendar(2015, Calendar.JULY, 8).time, "DummyVerificationToken")).build())
+            MAIN_GROUP_ID + ":0:date",
+            FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1(new GregorianCalendar(2015, Calendar.JULY, 8).time, "DummyVerificationToken")).build())
 
     when:
-    FormDumper dumper = new FormDumper(formContent, mockedApi)
-    String html = dumper.dumpFormAsHtmlTable()
+    HtmlDumper dumper = new HtmlDumper(formContent, mockedApi, false)
+    String html = dumper.dump()
 
     then:
     def expectedHtml = new File('test/resources/expected_verifiedFormFieldValue.html').text.replaceAll("\n *<", "<")
@@ -344,26 +311,105 @@ class FormDumperSpecification extends Specification {
             FormFieldContentV1.builder().value(new VerifiedFormFieldValueV1(null, "DummyVerificationToken")).build())
 
     when:
-    FormDumper dumper = new FormDumper(formContent, mockedApi)
-    String html = dumper.dumpFormAsHtmlTable()
+    HtmlDumper dumper = new HtmlDumper(formContent, mockedApi, false)
+    String html = dumper.dump()
 
     then:
     def expectedHtml = new File('test/resources/expected_verifiedFormFieldValue_nullValues.html').text.replaceAll("\n *<", "<")
     html == expectedHtml
   }
 
-  def "dumping a form to Text"() {
+  def "dumping a form to raw text, with headings and without HTML-escaping"() {
     given:
     String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
     FormContentV1 formContent = JsonToFormContentConverter.convert(json)
 
     when:
-    FormDumper dumper = new FormDumper(formContent, mockedApi)
-    String text = dumper.dumpFormAsText(true)
+    TextDumper dumper = new TextDumper(formContent, mockedApi, false, true, false)
+    String output = dumper.dump()
 
     then:
-    def expectedText = new File('test/resources/expected.txt').text
-    text == expectedText
+    output == """\
+Main Group (mainGroupId):
+  Time >>> 10:44 <<<
+  Yes/No >>> Ja <<<
+  NPA >>> Sie waren NICHT mit dem neuem Personalausweis angemeldet <<<
+  Textfield >>> Textfield content with <html>HTML</html> <<<
+  Sinple Checkbox >>> Ja <<<
+  Radio Buttons >>> first label <<<
+  Textarea >>> Textarea
+content <<<
+  Multiselect >>> first label, second label <<<
+  Checkbox List >>> first label, second label <<<
+  Fileupload >>> Datei: "dummy.pdf" <<<
+  Date >>> 09.08.2015 <<<
+  SelectOptions >>> second label <<<
+  Eurobetrag >>> 5.66 € <<<
+  Name >>> Testname <<<
+"""
+  }
+
+  def "dumping a form to JSON"() {
+    given:
+    String allFieldsFileContent = getClass().getResourceAsStream("resources/formContent_allFields.json").text
+    FormContentV1 formContent = JsonToFormContentConverter.convert(allFieldsFileContent)
+
+    when:
+    JsonDumper dumper = new JsonDumper(formContent, mockedApi, false, true)
+    String json = dumper.dump()
+
+    then:
+    json.contains('"mainGroupId_0_yesno": true')
+    json.contains('"mainGroupId_0_textfield": "Textfield content with <html>HTML</html>"')
+    json.contains('"mainGroupId_0_fileupload": "dummy.pdf"')
+    json.contains('"mainGroupId_0_date": "2015-08-09"')
+  }
+
+  def "dumping a form to JSON with metadata and complex file objects"() {
+    given:
+    String allFieldsFileContent = getClass().getResourceAsStream("resources/formContent_allFields.json").text
+    FormContentV1 formContent = JsonToFormContentConverter.convert(allFieldsFileContent)
+
+    when:
+    JsonDumper dumper = new JsonDumper(formContent, mockedApi, true, false)
+    String json = dumper.dump()
+
+    then:
+    json.contains('"formId": "6000357:testform:v1.0"')
+    json.contains('''\
+        "mainGroupId_0_fileupload": {
+            "filename": "dummy.pdf",
+            "fileAsBase64": "UERGIGNvbnRlbnQ="
+        }''')
+  }
+
+  def "hiding a specific field via the configureAdditionalHidingLogic logic"() {
+    given:
+    String allFieldsFileContent = getClass().getResourceAsStream("resources/formContent_allFields.json").text
+    FormContentV1 formContent = JsonToFormContentConverter.convert(allFieldsFileContent)
+    String fieldToHide = "textfield"
+    String expectedDifference = "Textfield >>> Textfield content with <html>HTML</html> <<<"
+
+    /**
+     * Hides field with the id of $fieldToHide
+     */
+    Closure<Boolean> additionalHidingLogic = {
+      //noinspection GroovyTrivialIf - better readability
+      if (it.id == fieldToHide) {
+        return true
+      } else {
+        return false
+      }
+    }
+
+    when:
+    TextDumper dumperWithLogic = new TextDumper(formContent, mockedApi, false, true, false)
+    dumperWithLogic.configureAdditionalHidingLogic  additionalHidingLogic
+    TextDumper dumperWithoutLogic = new TextDumper(formContent, mockedApi, false, true, false)
+
+    then:
+    !dumperWithLogic.dump().contains(expectedDifference)
+    dumperWithoutLogic.dump().contains(expectedDifference)
   }
 }
 
