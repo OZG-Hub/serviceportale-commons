@@ -26,7 +26,7 @@ abstract class AbstractFormDumper {
   final protected ScriptingApiV1 api
   final protected boolean includeMetadata
 
-  final protected static String iso8601Format = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
+  final protected static String ISO8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
 
   /**
    * Additional rules which decided if a field should be hidden. By default we show all fields.
@@ -422,7 +422,7 @@ abstract class AbstractFormDumper {
 
     metadata.put("formId", form.id)
 
-    SimpleDateFormat formatter = new SimpleDateFormat(iso8601Format)
+    SimpleDateFormat formatter = new SimpleDateFormat(ISO8601_FORMAT)
     String formattedCreationDate = formatter.format(new Date())
     metadata.put("creationDate", formattedCreationDate)
 

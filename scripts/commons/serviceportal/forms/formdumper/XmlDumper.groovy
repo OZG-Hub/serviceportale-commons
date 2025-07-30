@@ -9,8 +9,6 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
 import groovy.xml.MarkupBuilder
 import groovy.xml.XmlUtil
 
-import java.text.SimpleDateFormat
-
 /**
  * Transforms a Serviceportal-proprietary form (= a FormContentV1 object) into XML files.
  *
@@ -45,8 +43,8 @@ import java.text.SimpleDateFormat
  * </pre>
  */
 class XmlDumper extends AbstractFormDumper {
-  final static private String rootTag = "serviceportal"
-  final static private String fieldsTag = "serviceportal-fields"
+  final static private String ROOT_TAG = "serviceportal"
+  final static private String FIELDS_TAG = "serviceportal-fields"
 
   /**
    * XML tags can NOT start with a number, so we need to add a prefix like "instance_" to it.
@@ -74,7 +72,7 @@ class XmlDumper extends AbstractFormDumper {
    */
   @Override
   protected String dumpingStartHook() {
-    return "<$rootTag>"
+    return "<$ROOT_TAG>"
   }
 
   @Override
@@ -98,7 +96,7 @@ class XmlDumper extends AbstractFormDumper {
   protected String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
     if (isFirstGroup) {
       // Open the tag for form fields, before printing the first group (i.e. only open it once)
-      currentResult += "<$fieldsTag>"
+      currentResult += "<$FIELDS_TAG>"
       isFirstGroup = false
     }
 
@@ -145,8 +143,8 @@ class XmlDumper extends AbstractFormDumper {
   @Override
   protected String dumpingDoneHook(String currentResult) {
     currentResult += "</$lastOpenedGroup>"
-    currentResult += "</$fieldsTag>"
-    currentResult += "</$rootTag>"
+    currentResult += "</$FIELDS_TAG>"
+    currentResult += "</$ROOT_TAG>"
 
     // Sanity check: Verify the result is actually valid XML
     try {
