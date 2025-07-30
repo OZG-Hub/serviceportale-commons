@@ -78,12 +78,6 @@ class CsvDumper extends AbstractFormDumper {
 
     String fieldValueAsString
     switch (field.type) {
-      case FieldTypeV1.DATE:
-        fieldValueAsString = new SimpleDateFormat("yyyy-MM-dd").format(field.value as Date)
-        break
-      case FieldTypeV1.TIME:
-        fieldValueAsString = new SimpleDateFormat("HH:mm").format(field.value as Date)
-        break
       case FieldTypeV1.FILE:
         // Output is base64 encoded data
         fieldValueAsString = (field.value as BinaryContentV1).data.encodeBase64()
@@ -94,7 +88,8 @@ class CsvDumper extends AbstractFormDumper {
         fieldValueAsString = "[${multiUpload.each { it.data.encodeBase64() }.join(",")}]"
         break
       default:
-        fieldValueAsString = getValueFromField(field).toString()
+        // Use a default technical representation
+        fieldValueAsString = renderFieldForTechnicalOutput(field)
     }
 
     currentResult += fieldKey + separator + escapeForCsv(fieldValueAsString) + lineTerminator

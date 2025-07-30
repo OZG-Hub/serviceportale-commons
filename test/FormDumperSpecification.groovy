@@ -125,7 +125,7 @@ class FormDumperSpecification extends Specification {
     String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
     FormContentV1 formContent = JsonToFormContentConverter.convert(json)
     String expected = '''\
-mainGroupId:0:time,"10:44"
+mainGroupId:0:time,"10:44:00"
 mainGroupId:0:yesno,"true"
 mainGroupId:0:npa,"false"
 mainGroupId:0:textfield,"Textfield content with <html>HTML</html>"
@@ -202,8 +202,8 @@ mainGroupId:0:name,"Testname"
     // Trust level
     parsedGroupInstance.name == "Testname"
 
-    parsedGroupInstance.date == "2015-08-09T00:00:00.000+02:00"
-    parsedGroupInstance.time == "1970-01-01T10:44:00.000+01:00"
+    parsedGroupInstance.date == "2015-08-09"
+    parsedGroupInstance.time == "10:44:00"
     parsedGroupInstance.money == "5.66"
     parsedGroupInstance.npa == false
   }

@@ -307,6 +307,93 @@ abstract class AbstractFormDumper {
   }
 
   /**
+   * Get a simple String representation useful for technical processing.
+   * E.g. Date fields will contain a RFC3339 `full-date` representation
+   *
+   * Note that this Method will throw a UnsupportedOperationException for field types where no reasonable generic
+   * representation exists. (E.g. Upload-Fields, as their representation should depend on the concrete target format.)
+   *
+   * @param field The field to render
+   * @return The String representation
+   */
+  @SuppressWarnings('GrDeprecatedAPIUsage')
+  protected String renderFieldForTechnicalOutput(FormFieldV1 field) {
+    def value = getValueFromField(field)
+
+    //noinspection GroovyFallthrough - those fall-throughs are on purpose.
+    switch (field.type) {
+
+      case FieldTypeV1.STRING:
+        // fall through
+      case FieldTypeV1.STRING_AJAX_AUTOCOMPLETE:
+        // fall through
+      case FieldTypeV1.KFZ_KENNZEICHEN:
+        // fall through
+      case FieldTypeV1.TEXTAREA:
+        // fall through
+      case FieldTypeV1.DROPDOWN_SINGLE_SELECT:
+        // fall-through
+      case FieldTypeV1.RADIO_BUTTONS:
+        // fall through
+        return value
+        break
+
+        // Note that some target formats (like JSON) might want to overwrite this behaviour as Boolean is a data type in JSON.
+      case FieldTypeV1.BOOLEAN:
+        // fall through
+      case FieldTypeV1.SUBMITTED_WITH_NPA_INFO:
+        // fall through
+      case FieldTypeV1.SINGLE_CHECKBOX:
+        return value.toString()
+        break
+
+      case FieldTypeV1.DATE:
+        // See https://datatracker.ietf.org/doc/html/rfc3339#section-5.6, `full-date`
+        return new SimpleDateFormat("yyyy-MM-dd").format(value as Date)
+        break
+      case FieldTypeV1.TIME:
+        // See https://datatracker.ietf.org/doc/html/rfc3339#section-5.6, `partial-time`
+        return new SimpleDateFormat("HH:mm:ss").format(value as Date)
+        break
+
+      case FieldTypeV1.EURO_BETRAG:
+        return (value as BigDecimal).toPlainString() // Note that this uses a dot '.' as a decimal seperator
+        break
+
+
+      case FieldTypeV1.CHECKBOX:
+        // fall through
+      case FieldTypeV1.DROPDOWN_SINGLE_SELECT_AJAX:
+        // fall through
+      case FieldTypeV1.DROPDOWN_MULTIPLE_SELECT:
+        // fall through
+      case FieldTypeV1.TWO_LIST_SELECT:
+        // comma-and-space-separated and enclosed in brackets.
+        // e.g. [firstOption, secondOption]
+        assert value instanceof List: "Sanity check failed: Expected type ${field.type} to be List-like, but it wasn't."
+        return "[${(value as List).collect {it.toString()}.join(", ")}]"
+
+      case FieldTypeV1.FILE:
+        // fall through
+      case FieldTypeV1.GEO_MAP:
+        // fall through
+      case FieldTypeV1.GDIK_MAP:
+        // fall through
+      case FieldTypeV1.MULTIPLE_FILE:
+        throw new UnsupportedOperationException("renderFieldForTechnicalOutput failed for field type `${field.type}` " +
+                "because there exists no generic way to express that field as a String. Please extend the " +
+                "implementation of this FormDumper is such a way that it generated a implementation-specific structure" +
+                "(e.g. a JsonDumper would probably construct a Map for a Upload-Field containing filename, " +
+                "base64-encoded content, …) and does not call renderFieldForTechnicalOutput() in the first place.")
+
+      default:
+        api.logger.warn("AbstractFormDumper.renderFieldForTechnicalOutput does not know how to display this field '${field.type}' (${field.type.class.name}), " + "so it defaults to toString().")
+        return value.toString()
+        break
+    }
+  }
+
+  /**
    * Generates a map of metadata with entries for postfachHandleId, form id, creation date
    * and the base64-encoded content of a binary content file named 'applicantFormAsPdf'.
    *

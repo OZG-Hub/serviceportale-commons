@@ -170,14 +170,6 @@ class XmlDumper extends AbstractFormDumper {
       case String:
         return XmlUtil.escapeXml(value as String)
         break
-      case Boolean:
-        return value ? "true" : "false"
-        break
-      case Date:
-        Date date = value as Date
-        SimpleDateFormat sdf = new SimpleDateFormat(iso8601Format, Locale.GERMAN)
-        return sdf.format(date)
-        break
       case BinaryContentV1:
         BinaryContentV1 bc = value as BinaryContentV1
         StringWriter bcWriter = new StringWriter()
@@ -196,15 +188,12 @@ class XmlDumper extends AbstractFormDumper {
         }
         return listWriter.toString()
         break
-      case BigDecimal:
-        return XmlUtil.escapeXml((value as BigDecimal).toPlainString())
-        break
       case BinaryGeoMapContentV1:
         // JSON format is not predictable (see https://serviceportal-community.de/153, so just output the JSON as-is)
         return XmlUtil.escapeXml((value as BinaryGeoMapContentV1).json)
       default:
-        api.logger.warn("XmlDumper.dumpAsFlatXml does not know how to display this class '${value.class}', " + "so it defaults to toString()")
-        return value.toString()
+        // Use a default technical representation, but make sure to escape it!
+        return XmlUtil.escapeXml(renderFieldForTechnicalOutput(field))
     }
   }
 

@@ -76,14 +76,6 @@ class JsonDumper extends AbstractFormDumper {
 
     //noinspection GrDeprecatedAPIUsage - we need to support some deprecated fieldTypes as they might still be in use
     switch (field.type) {
-      case FieldTypeV1.TIME:
-        String formatted = new SimpleDateFormat("HH:mm").format(field.value as Date)
-        fieldsBuffer.put(fieldId, formatted)
-        break
-      case FieldTypeV1.DATE:
-        String formatted = new SimpleDateFormat("yyyy-MM-dd").format(field.value as Date)
-        fieldsBuffer.put(fieldId, formatted)
-        break
       case FieldTypeV1.MULTIPLE_FILE:
         if (fileNamesOnly) {
           List<String> fileNames = (field.value as List<BinaryContentV1>).collect { it.uploadedFilename }
@@ -118,9 +110,12 @@ class JsonDumper extends AbstractFormDumper {
                 selectionJson: content.selectionJson,
         ])
         break
+      case FieldTypeV1.BOOLEAN:
+        fieldsBuffer.put(fieldId, field.value)
+        break
       default:
-        // For most fields it makes sense to use the return values as is
-        fieldsBuffer.put(fieldId, getValueFromField(field))
+        // Use a default technical representation
+        fieldsBuffer.put(fieldId, renderFieldForTechnicalOutput(field))
         break
     }
 
