@@ -1,5 +1,6 @@
 package commons.serviceportal.forms.formdumper
 
+import commons.serviceportal.forms.formdumper.dummy.AbstractFormDumper
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldGroupInstanceV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FormFieldV1
@@ -12,7 +13,7 @@ import groovy.xml.XmlUtil
 /**
  * Transforms a Serviceportal-proprietary form (= a FormContentV1 object) into XML files.
  *
- * See {@link AbstractFormDumper}
+ * See {@link commons.serviceportal.forms.formdumper.dummy.AbstractFormDumper}
  *
  * <h2>Example Output:</h2>
  *

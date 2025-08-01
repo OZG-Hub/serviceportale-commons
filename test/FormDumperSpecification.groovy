@@ -4,6 +4,7 @@ import commons.serviceportal.forms.formdumper.HtmlDumper
 import commons.serviceportal.forms.formdumper.JsonDumper
 import commons.serviceportal.forms.formdumper.TextDumper
 import commons.serviceportal.forms.formdumper.XmlDumper
+import commons.serviceportal.forms.formdumper.dummy.AbstractFormDumper
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.StringUtilsApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldGroupInstanceV1
@@ -22,6 +23,9 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormFieldContent
 import de.seitenbau.serviceportal.scripting.api.v1.start.StartedByUserV1
 import spock.lang.Specification
 
+import java.time.LocalDate
+import java.time.LocalTime
+
 class FormDumperSpecification extends Specification {
 
   public static final String MAIN_GROUP_ID = "mainGroupId"
@@ -30,6 +34,13 @@ class FormDumperSpecification extends Specification {
   void addFieldToInstance(FieldGroupInstanceV1 groupInstance, String fieldId, FieldTypeV1 type, String label) {
     FormFieldV1 field = new FormFieldV1(fieldId, type)
     field.setLabel(label)
+    // Set DATE and TIME static with processEngine V2 to match the new classTypes.
+    // To prevent the value from being overwritten, the value must not be set in the inputted form.
+    if (type == FieldTypeV1.TIME) {
+      field.value = LocalTime.parse("11:44")
+    } else if (type == FieldTypeV1.DATE) {
+      field.value = LocalDate.parse("2020-08-09")
+    }
     FormRowV1 row = FormRowV1.builder().fields([field]).build()
     groupInstance.getRows().add(row)
   }
@@ -410,6 +421,38 @@ content <<<
     then:
     !dumperWithLogic.dump().contains(expectedDifference)
     dumperWithoutLogic.dump().contains(expectedDifference)
+  }
+
+  def "dumping a simple input to all formats with process engineV2 date and time fields"() {
+    given:
+    ArrayList<String> contentList = []
+    String json = getClass().getResourceAsStream("resources/formContent_allFieldsEngineV2.json").text
+    FormContentV1 formContent = JsonToFormContentConverter.convert(json)
+
+
+    when:
+    ArrayList<AbstractFormDumper> dumperList = []
+
+    CsvDumper csvDumper = new CsvDumper(formContent, mockedApi, false)
+    dumperList.add(csvDumper)
+    JsonDumper jsonDumper = new JsonDumper(formContent, mockedApi, false)
+    dumperList.add(jsonDumper)
+    TextDumper textDumper = new TextDumper(formContent, mockedApi, false)
+    dumperList.add(textDumper)
+    XmlDumper xmlDumper = new XmlDumper(formContent, mockedApi, false)
+    dumperList.add(xmlDumper)
+    HtmlDumper htmlDumper = new HtmlDumper(formContent, mockedApi, false)
+    dumperList.add(htmlDumper)
+
+    dumperList.each {dumper ->
+      String content = dumper.dump()
+      contentList.add(content)
+    }
+    then:
+    contentList.every { content ->
+      content.contains("11:44")
+      (content.contains("2020-08-09") || content.contains("09.08.2020"))
+    }
   }
 }
 

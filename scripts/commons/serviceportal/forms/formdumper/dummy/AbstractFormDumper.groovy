@@ -1,4 +1,9 @@
-package commons.serviceportal.forms.formdumper
+package commons.serviceportal.forms.formdumper.dummy
+// The gradle build tool only replaces/builds different classes during gradle buildModel if they are explicitly imported.
+// Because the AbstractFormDumper was previously located in the same package as the other dumpers that extend it,
+// the AbstractFormDumper class was not imported in the other dumpers.
+// This behavior resulted in the class not being resolved at runtime.
+// Therefore, the class had to be moved to a subpackage.
 
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.*
@@ -13,6 +18,9 @@ import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
 import java.text.SimpleDateFormat
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.time.LocalDate
 
 /**
  * A FormDumper is a helper class designed to transfer the Serviceportal-proprietary form (= a FormContentV1 object)
@@ -278,10 +286,16 @@ abstract class AbstractFormDumper {
         return generateCommaSeparatedListOfPossibleValueLabel(value as ArrayList<String>, field.possibleValues)
         break
       case FieldTypeV1.DATE:
-        return new SimpleDateFormat("dd.MM.yyyy").format(value as Date)
+        // The types of date fields differ between the process engineV1 and engineV2, so the respective date type must be used in each case.
+        String dateString = value.class == Date ? new SimpleDateFormat("dd.MM.yyyy").format(value as Date) :
+                (value as LocalDate).format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+        return dateString
         break
       case FieldTypeV1.TIME:
-        return new SimpleDateFormat("HH:mm").format(value as Date)
+        // The types of time fields differ between the process engineV1 and engineV2, so the respective date type must be used in each case.
+        String timeString = value.class == Date ? new SimpleDateFormat("HH:mm").format(value as Date) :
+                (value as LocalTime).format(DateTimeFormatter.ofPattern("HH:mm"))
+        return timeString
         break
       case FieldTypeV1.EURO_BETRAG:
         return (value as BigDecimal).toString() + " €"
@@ -349,11 +363,17 @@ abstract class AbstractFormDumper {
 
       case FieldTypeV1.DATE:
         // See https://datatracker.ietf.org/doc/html/rfc3339#section-5.6, `full-date`
-        return new SimpleDateFormat("yyyy-MM-dd").format(value as Date)
+        // The types of date fields differ between the process engineV1 and engineV2, so the respective date type must be used in each case.
+        String dateString = value.class == Date ? new SimpleDateFormat("yyyy-MM-dd").format(value as Date) :
+                (value as LocalDate).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        return dateString
         break
       case FieldTypeV1.TIME:
         // See https://datatracker.ietf.org/doc/html/rfc3339#section-5.6, `partial-time`
-        return new SimpleDateFormat("HH:mm:ss").format(value as Date)
+        // The types of time fields differ between the process engineV1 and engineV2, so the respective date type must be used in each case.
+        String timeString = value.class == Date ? new SimpleDateFormat("HH:mm:ss").format(value as Date) :
+                (value as LocalTime).format(DateTimeFormatter.ofPattern("HH:mm:ss"))
+        return timeString
         break
 
       case FieldTypeV1.EURO_BETRAG:

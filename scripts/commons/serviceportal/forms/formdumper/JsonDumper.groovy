@@ -1,5 +1,6 @@
 package commons.serviceportal.forms.formdumper
 
+import commons.serviceportal.forms.formdumper.dummy.AbstractFormDumper
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldGroupInstanceV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldTypeV1
@@ -10,13 +11,11 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGeoMapCont
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
 import groovy.json.JsonBuilder
 
-import java.text.SimpleDateFormat
-
 /**
  * Transforms a Serviceportal-proprietary form (= a FormContentV1 object) into a JSON structure where field keys are
  * json key and values depend on the field type of the corresponding field.
  *
- * See {@link AbstractFormDumper}
+ * See {@link commons.serviceportal.forms.formdumper.dummy.AbstractFormDumper}
  *
  * <h2>Example Output:</h2>
  * (Assuming fileNamesOnly = true)

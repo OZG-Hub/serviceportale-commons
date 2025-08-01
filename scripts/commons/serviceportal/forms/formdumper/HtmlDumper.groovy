@@ -1,5 +1,6 @@
 package commons.serviceportal.forms.formdumper
 
+import commons.serviceportal.forms.formdumper.dummy.AbstractFormDumper
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldGroupInstanceV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.FieldTypeV1
@@ -13,7 +14,7 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
  * Transforms a Serviceportal-proprietary form (= a FormContentV1 object) into HTML-tables, useful e.g. for showing
  * a summary page.
  *
- * See {@link AbstractFormDumper}
+ * See {@link commons.serviceportal.forms.formdumper.dummy.AbstractFormDumper}
  *
  * <h2>Example Output:</h2>
  * <h2>Main Group</h2>
