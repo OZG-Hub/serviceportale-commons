@@ -1,4 +1,9 @@
-package commons.serviceportal.forms.formdumper
+package commons.serviceportal.forms.formdumper.dummy
+// The gradle build tool only replaces/builds different classes during gradle buildModel if they are explicitly imported.
+// Because the AbstractFormDumper was previously located in the same package as the other dumpers that extend it,
+// the AbstractFormDumper class was not imported in the other dumpers.
+// This behavior resulted in the class not being resolved at runtime.
+// Therefore, the class had to be moved to a subpackage.
 
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.*
