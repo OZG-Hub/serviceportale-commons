@@ -287,15 +287,23 @@ abstract class AbstractFormDumper {
         break
       case FieldTypeV1.DATE:
         // The types of date fields differ between the process engineV1 and engineV2, so the respective date type must be used in each case.
-        String dateString = value.class == Date ? new SimpleDateFormat("dd.MM.yyyy").format(value as Date) :
-                (value as LocalDate).format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
-        return dateString
+        if(value.class == Date) {
+          // process engine v1 variant (date fields are submitted as as Date objects)
+          return new SimpleDateFormat("dd.MM.yyyy").format(value as Date)
+        } else {
+          // process engine v2 variant (date fields are submitted as as LocalDate objects)
+          return (value as LocalDate).format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+        }
         break
       case FieldTypeV1.TIME:
         // The types of time fields differ between the process engineV1 and engineV2, so the respective date type must be used in each case.
-        String timeString = value.class == Date ? new SimpleDateFormat("HH:mm").format(value as Date) :
-                (value as LocalTime).format(DateTimeFormatter.ofPattern("HH:mm"))
-        return timeString
+        if(value.class == Date) {
+          // process engine v1 variant (date fields are submitted as as Date objects)
+          return new SimpleDateFormat("HH:mm").format(value as Date)
+        } else {
+          // process engine v2 variant (date fields are submitted as as LocalDate objects)
+          return (value as LocalTime).format(DateTimeFormatter.ofPattern("HH:mm"))
+        }
         break
       case FieldTypeV1.EURO_BETRAG:
         return (value as BigDecimal).toString() + " €"
@@ -364,16 +372,24 @@ abstract class AbstractFormDumper {
       case FieldTypeV1.DATE:
         // See https://datatracker.ietf.org/doc/html/rfc3339#section-5.6, `full-date`
         // The types of date fields differ between the process engineV1 and engineV2, so the respective date type must be used in each case.
-        String dateString = value.class == Date ? new SimpleDateFormat("yyyy-MM-dd").format(value as Date) :
-                (value as LocalDate).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-        return dateString
+        if(value.class == Date) {
+          // process engine v1 variant (date fields are submitted as as Date objects)
+          return new SimpleDateFormat("yyyy-MM-dd").format(value as Date)
+        } else {
+          // process engine v2 variant (date fields are submitted as as LocalDate objects)
+          return (value as LocalDate).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        }
         break
       case FieldTypeV1.TIME:
         // See https://datatracker.ietf.org/doc/html/rfc3339#section-5.6, `partial-time`
         // The types of time fields differ between the process engineV1 and engineV2, so the respective date type must be used in each case.
-        String timeString = value.class == Date ? new SimpleDateFormat("HH:mm:ss").format(value as Date) :
-                (value as LocalTime).format(DateTimeFormatter.ofPattern("HH:mm:ss"))
-        return timeString
+        if(value.class == Date) {
+          // process engine v1 variant (date fields are submitted as as Date objects)
+          return new SimpleDateFormat("HH:mm:ss").format(value as Date)
+        } else {
+          // process engine v2 variant (date fields are submitted as as LocalDate objects)
+          return (value as LocalTime).format(DateTimeFormatter.ofPattern("HH:mm:ss"))
+        }
         break
 
       case FieldTypeV1.EURO_BETRAG:
