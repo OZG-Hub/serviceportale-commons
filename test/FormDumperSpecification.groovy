@@ -22,6 +22,9 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormFieldContent
 import de.seitenbau.serviceportal.scripting.api.v1.start.StartedByUserV1
 import spock.lang.Specification
 
+import java.time.LocalDate
+import java.time.LocalTime
+
 class FormDumperSpecification extends Specification {
 
   public static final String MAIN_GROUP_ID = "mainGroupId"
@@ -410,6 +413,36 @@ content <<<
     then:
     !dumperWithLogic.dump().contains(expectedDifference)
     dumperWithoutLogic.dump().contains(expectedDifference)
+  }
+
+
+  def "dumping form on a process engineV2 environment"() {
+    given:
+    String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
+    FormContentV1 formContent = JsonToFormContentConverter.convert(json)
+    formContent.fields.put(
+            MAIN_GROUP_ID + ":0:time",
+            FormFieldContentV1.builder().value(LocalTime.parse("11:44")).build())
+    formContent.fields.put(
+            MAIN_GROUP_ID + ":0:date",
+            FormFieldContentV1.builder().value(LocalDate.parse("2020-08-09")).build())
+
+
+    when:
+    // Since the handling of the different engines does not manifest in the different FormDumpers,
+    // only two FormDumpers are called, which cover the entire behavior.
+    CsvDumper csvDumper = new CsvDumper(formContent, mockedApi, false)
+    String csvContent = csvDumper.dump()
+
+    HtmlDumper htmlDumper = new HtmlDumper(formContent, mockedApi, false)
+    String htmlContent = htmlDumper.dump()
+
+    then:
+    csvContent.contains("11:44:00")
+    csvContent.contains("2020-08-09")
+
+    htmlContent.contains("11:44")
+    htmlContent.contains("09.08.2020")
   }
 }
 
