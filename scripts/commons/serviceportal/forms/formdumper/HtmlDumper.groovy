@@ -55,6 +55,7 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
  */
 class HtmlDumper extends AbstractFormDumper {
   final int baseHeadingLevel
+  final boolean tableWithRowHeaders
 
   /**
    * Initialize a new HtmlDumper.
@@ -65,10 +66,11 @@ class HtmlDumper extends AbstractFormDumper {
    * @param param baseHeadingLevel the HTML-heading level (i.e. the "2" in "&lt;h2&gt;" used for the headings before each group
    *   instance)
    */
-  HtmlDumper(FormContentV1 formContent, ScriptingApiV1 api, boolean includeMetadata, int baseHeadingLevel = 2) {
+  HtmlDumper(FormContentV1 formContent, ScriptingApiV1 api, boolean includeMetadata, int baseHeadingLevel = 2, boolean tableWithRowHeaders = false) {
     super(formContent, api, includeMetadata)
 
     this.baseHeadingLevel = baseHeadingLevel
+    this.tableWithRowHeaders = tableWithRowHeaders
   }
 
   @Override
@@ -82,7 +84,10 @@ class HtmlDumper extends AbstractFormDumper {
     currentResult += "<h${baseHeadingLevel}>${groupInstance.title}</h${baseHeadingLevel}>"
     // General headings for the instance
     currentResult += "<table class=\"summary-form\">"
-    currentResult += "<thead><tr><th>Feld</th><th>Ihre Eingabe</th></tr></thead>"
+    // Set Column Headers only when tableWithRowHeaders = false
+    if (!tableWithRowHeaders){
+      currentResult += "<thead><tr><th>Feld</th><th>Ihre Eingabe</th></tr></thead>"
+    }
     currentResult += "<tbody>"
     return currentResult
   }
@@ -99,7 +104,12 @@ class HtmlDumper extends AbstractFormDumper {
     currentResult += "<tr>"
 
     // Left column: The question
-    currentResult += "<td>${field.label ?: ""}</td>"
+    // Use <td> or <th> depending on whether they are column headers or row headers
+    if (tableWithRowHeaders) {
+      currentResult += "<th>${field.label ?: ""}</th>"
+    } else {
+      currentResult += "<td>${field.label ?: ""}</td>"
+    }
 
     // Right column: The answer
     currentResult += "<td>"

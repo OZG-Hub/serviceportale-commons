@@ -278,6 +278,20 @@ mainGroupId:0:name,"Testname"
     html == expectedHtml
   }
 
+  def "dumping a form to HTML Table with row headers"() {
+    given:
+    String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
+    FormContentV1 formContent = JsonToFormContentConverter.convert(json)
+
+    when:
+    HtmlDumper dumper = new HtmlDumper(formContent, mockedApi, false, 2, true)
+    String html = dumper.dump()
+
+    then:
+    def expectedHtml = new File('test/resources/expectedWithRowHeaders.html').text.replaceAll("\n *<", "<")
+    html == expectedHtml
+  }
+
   def "dumping a form to HTML Table vith VerifiedFormFieldValueV1 values"() {
     given:
     FormContentV1 formContent = new FormContentV1("6000357:testform:v1.0")
