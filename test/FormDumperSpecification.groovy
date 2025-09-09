@@ -40,7 +40,8 @@ class FormDumperSpecification extends Specification {
   FormV1 createEmptyForm() {
     FormV1 form = new FormV1("6000357:testform:v1.0")
     FieldGroupV1 fieldGroup = new FieldGroupV1(MAIN_GROUP_ID)
-    FormSectionV1 section = FormSectionV1.builder().fieldGroups([fieldGroup]).build()
+    FieldGroupV1 secondFieldGroup = new FieldGroupV1("secondGroupId")
+    FormSectionV1 section = FormSectionV1.builder().fieldGroups([fieldGroup, secondFieldGroup]).build()
     form.getSections().add(section)
     return form
   }
@@ -52,6 +53,7 @@ class FormDumperSpecification extends Specification {
     // Mock form
     FormV1 form = createEmptyForm()
     FieldGroupInstanceV1 fieldGroupInstance = form.getGroupInstance(MAIN_GROUP_ID, 0)
+    FieldGroupInstanceV1 secondFieldGroupInstance = form.getGroupInstance("secondGroupId", 0)
     fieldGroupInstance.setTitle("Main Group")
     addFieldToInstance(fieldGroupInstance, "textanzeige", FieldTypeV1.TEXT, "Textanzeige")
     addFieldToInstance(fieldGroupInstance, "time", FieldTypeV1.TIME, "Time")
@@ -75,6 +77,8 @@ class FormDumperSpecification extends Specification {
     addFieldToInstance(fieldGroupInstance, "fileupload", FieldTypeV1.FILE, "Fileupload")
     addFieldToInstance(fieldGroupInstance, "h2", FieldTypeV1.H2, "H2")
     addFieldToInstance(fieldGroupInstance, "h1", FieldTypeV1.H1, "H1")
+    addFieldToInstance(secondFieldGroupInstance, "textanzeige", FieldTypeV1.TEXT, "Textanzeige")
+    addFieldToInstance(secondFieldGroupInstance, "textanzeige2", FieldTypeV1.TEXT, "Textanzeige")
     addFieldToInstance(fieldGroupInstance, "date", FieldTypeV1.DATE, "Date")
 
     addFieldToInstance(fieldGroupInstance, "ca4618b9", FieldTypeV1.PLACEHOLDER, "Placeholder")
