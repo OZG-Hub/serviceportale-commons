@@ -126,6 +126,7 @@ class XmlDumper extends AbstractFormDumper {
   protected String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
     // close tag for current instance
     currentResult += "</${instance_prefix}${groupInstance.index}>"
+    currentResult += "</$lastOpenedGroup>"
     return currentResult
   }
 
@@ -143,7 +144,6 @@ class XmlDumper extends AbstractFormDumper {
 
   @Override
   protected String dumpingDoneHook(String currentResult) {
-    currentResult += "</$lastOpenedGroup>"
     currentResult += "</$FIELDS_TAG>"
     currentResult += "</$ROOT_TAG>"
 

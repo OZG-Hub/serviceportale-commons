@@ -132,9 +132,7 @@ abstract class AbstractFormDumper {
             }
           }
           // Only show the group instance if at least one field is shown
-          if (!minOneField) {
-            result = groupInstanceEndHook(result, groupInstance)
-          } else {
+          if (minOneField) {
             result = groupInstanceEndHook(tempResult, groupInstance)
           }
         }
