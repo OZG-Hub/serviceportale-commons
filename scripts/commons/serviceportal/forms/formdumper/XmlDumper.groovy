@@ -105,11 +105,6 @@ class XmlDumper extends AbstractFormDumper {
     String id = groupInstance.id
     assert isValidXmlTagName(id): "Failed to create XML file. Group id '$id' is not a valid name for a XML node. Please change the group name."
 
-    if (lastOpenedGroup != id && lastOpenedGroup != null) {
-      // close previous open group tag as this one is no longer in use
-      currentResult += "</$lastOpenedGroup>"
-    }
-
     // open tag for group, but only, if we are not in it already
     if (lastOpenedGroup != id) {
       currentResult += "<$id>"
