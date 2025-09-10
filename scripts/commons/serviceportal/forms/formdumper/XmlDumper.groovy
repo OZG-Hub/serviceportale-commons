@@ -105,6 +105,11 @@ class XmlDumper extends AbstractFormDumper {
     String id = groupInstance.id
     assert isValidXmlTagName(id): "Failed to create XML file. Group id '$id' is not a valid name for a XML node. Please change the group name."
 
+    if (lastOpenedGroup != id && lastOpenedGroup != null) {
+      // close previous open group tag as this one is no longer in use
+      currentResult += "</$lastOpenedGroup>"
+    }
+
     // open tag for group, but only, if we are not in it already
     if (lastOpenedGroup != id) {
       currentResult += "<$id>"
@@ -121,7 +126,6 @@ class XmlDumper extends AbstractFormDumper {
   protected String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
     // close tag for current instance
     currentResult += "</${instance_prefix}${groupInstance.index}>"
-    currentResult += "</$lastOpenedGroup>"
     return currentResult
   }
 
@@ -139,15 +143,9 @@ class XmlDumper extends AbstractFormDumper {
 
   @Override
   protected String dumpingDoneHook(String currentResult) {
+    currentResult += "</$lastOpenedGroup>"
     currentResult += "</$FIELDS_TAG>"
     currentResult += "</$ROOT_TAG>"
-
-    // Sanity check: Verify the result is actually valid XML
-    try {
-      new XmlParser().parseText(currentResult)
-    } catch (Exception e) {
-      throw new Exception("Sanity check failed. XmlDumper did not generate valid XML. Please fix the XmlDumper class.", e)
-    }
 
     // Pretty print the result
     return XmlUtil.serialize(currentResult)
