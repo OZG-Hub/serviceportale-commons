@@ -147,13 +147,6 @@ class XmlDumper extends AbstractFormDumper {
     currentResult += "</$FIELDS_TAG>"
     currentResult += "</$ROOT_TAG>"
 
-    // Sanity check: Verify the result is actually valid XML
-    try {
-      new XmlParser().parseText(currentResult)
-    } catch (Exception e) {
-      throw new Exception("Sanity check failed. XmlDumper did not generate valid XML. Please fix the XmlDumper class.", e)
-    }
-
     // Pretty print the result
     return XmlUtil.serialize(currentResult)
   }

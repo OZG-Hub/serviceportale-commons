@@ -117,19 +117,29 @@ abstract class AbstractFormDumper {
     }
 
     form.groupInstances.each { groupInstance ->
-      result = groupInstanceBeginHook(result, groupInstance)
-
-      groupInstance.rows.each { row ->
-        row.fields.each { field ->
-
-          if (shouldRenderField(field, groupInstance)) {
-            result = fieldHook(result, field, groupInstance)
+      if (!groupInstance.isShown(form)){
+        // If the group is not shown, do nothing
+      } else {
+        boolean minOneFieldVisible = groupInstance.rows.any { row ->
+          row.fields.any { field ->
+            shouldRenderField(field, groupInstance)
           }
+        }
 
+        // Only show the group instance if at least one field is shown
+        if (minOneFieldVisible) {
+          result = groupInstanceBeginHook(result, groupInstance)
+
+          groupInstance.rows.each { row ->
+            row.fields.each { field ->
+              if (shouldRenderField(field, groupInstance)) {
+                result = fieldHook(result, field, groupInstance)
+              }
+            }
+          }
+          result = groupInstanceEndHook(result, groupInstance)
         }
       }
-
-      result = groupInstanceEndHook(result, groupInstance)
     }
 
     result = dumpingDoneHook(result)
