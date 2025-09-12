@@ -10,6 +10,8 @@ jobs:
 
     runs-on: ubuntu-22.04
 
+    groovy-version: [2.5.22, 4.0.8]
+
     steps:
     # Use the same time zone as the serviceportal server and developer computers as changes would lead to failing tests
     #   within the FormDumper specification
@@ -28,13 +30,17 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
+    - name: Set Groovy version in build.gradle
+      run: |
+        sed -i "s/implementation \"org.codehaus.groovy:groovy-all:[^\"]*\"/implementation \"org.codehaus.groovy:groovy-all:${{ matrix.groovy-version }}\"/" build.gradle
+
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2
 
     - name: Print gradlew version
       run: ./gradlew --version
 
-    - name: Run build with Gradle Wrapper
+    - name: Run build with Gradle Wrapper and Groovy ${{ matrix.groovy-version }}
       run: ./gradlew test --stacktrace
 
     - name: Archive test run result
