@@ -10,7 +10,9 @@ jobs:
 
     runs-on: ubuntu-22.04
 
-    groovy-version: [2.5.22, 4.0.8]
+    strategy:
+      matrix:
+        groovy-version: [2.5.22, 4.0.8]
 
     steps:
     # Use the same time zone as the serviceportal server and developer computers as changes would lead to failing tests
