@@ -49,5 +49,5 @@ jobs:
       uses: actions/upload-artifact@v4
       if: success() || failure() # Run in any case. Even if the previous tests failed.
       with:
-        name: test-run-result
+        name: test-run-results-${{ matrix.groovy-version }}
         path: ./build/reports/tests/test
