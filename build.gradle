@@ -12,6 +12,7 @@ String serviceportalPublicApiVersion = "1.195.8"
 
 ext {
   groovyVersion = project.hasProperty("groovyVersion") ? project.groovyVersion : "2.5.22"
+  spockVersion = groovyVersion == "2.5.22" ? "2.0-M1-groovy-2.5" : "2.4-M6-groovy-4.0"
   groovyGroup = groovyVersion.startsWith("4.") ? "org.apache.groovy" : "org.codehaus.groovy"
 }
 
@@ -32,7 +33,7 @@ dependencies {
 
   // testing
   implementation group: 'net.bytebuddy', name: 'byte-buddy-gradle-plugin', version: '1.10.1'
-  testImplementation "org.spockframework:spock-core:2.0-M1-groovy-2.5"
+  testImplementation "org.spockframework:spock-core:${spockVersion}"
 
   // Allow IntelliJ to load groovy grapes. Not required for scripts in the commons repo, but
   // required for developing the scripts in the 'tools' folder.
