@@ -32,10 +32,6 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Set Groovy version in build.gradle
-      run: |
-        sed -i "s/implementation \"org.codehaus.groovy:groovy-all:[^\"]*\"/implementation \"org.codehaus.groovy:groovy-all:${{ matrix.groovy-version }}\"/" build.gradle
-
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2
 
@@ -43,7 +39,7 @@ jobs:
       run: ./gradlew --version
 
     - name: Run build with Gradle Wrapper and Groovy ${{ matrix.groovy-version }}
-      run: ./gradlew test --stacktrace
+      run: ./gradlew clean test --stacktrace -PgroovyVersion=${{ matrix.groovy }}
 
     - name: Archive test run result
       uses: actions/upload-artifact@v4

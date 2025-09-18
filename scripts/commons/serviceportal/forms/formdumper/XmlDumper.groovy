@@ -9,7 +9,6 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGeoMapCont
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
 import groovy.xml.MarkupBuilder
 import groovy.xml.XmlUtil
-import groovy.xml.XmlParser
 
 /**
  * Transforms a Serviceportal-proprietary form (= a FormContentV1 object) into XML files.
