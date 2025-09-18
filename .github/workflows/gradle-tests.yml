@@ -38,7 +38,7 @@ jobs:
     - name: Print gradlew version
       run: ./gradlew --version
 
-    - name: Run build with Gradle Wrapper and Groovy ${{ matrix.groovy-version }}
+    - name: Run tests with Gradle Wrapper and Groovy ${{ matrix.groovy-version }}
       run: ./gradlew clean test --stacktrace -PgroovyVersion=${{ matrix.groovy-version }}
 
     - name: Archive test run result
