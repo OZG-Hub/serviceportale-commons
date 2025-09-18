@@ -1,0 +1,35 @@
+{
+  "appliedReplacements": null,
+  "formId": "6000357:testform:v1.0",
+  "formTitle": "",
+  "validationMessages": [],
+  "fields": {
+    "mainGroupId:0:123illegalNameForXmlNode": {
+      "value": null,
+      "validationMessages": [],
+      "valid": true,
+      "possibleValues": null
+    },
+    "mainGroupId:0:exampleField": {
+      "value": "hi!",
+      "validationMessages": [],
+      "valid": true,
+      "possibleValues": null
+    }
+  },
+  "context": {
+    "processInstanceId": "6XVK7gZJXTac1iSnloAF3A",
+    "taskSubprocessId": "6XVK7gZJXTac1iSnloAF3A",
+    "processInstanceStartTime": 1718278988546,
+    "npaAlreadyReadOut": false,
+    "rootProcessDefinitionKey": "m6000357.debugstadtMusterprozess",
+    "processDefinitionName": "Debugstadt - Musterprozess (zum Testen f\u00fcr Service-Kommune)",
+    "servicekontoNpaAuthenticated": false,
+    "superProcessDefinitionName": "Debugstadt - Musterprozess (zum Testen f\u00fcr Service-Kommune)",
+    "processType": "ELEKTRONISCHER_ANTRAG",
+    "sessionId": "6d8647a5-c42f-428e-a3db-f05c8e673127",
+    "taskId": "b0BNa6YIQ105nnnrN6lnsg"
+  },
+  "pressedCustomButton": null,
+  "createdOn": "2024-06-13T11:43:32+0000"
+}

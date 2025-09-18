@@ -49,7 +49,11 @@ sourceSets {
 
   test {
     groovy {
-      srcDirs = ['test']
+      if (groovyVersion.startsWith("4.")) {
+        srcDirs = ['test/processEngineV2']
+      } else {
+        srcDirs = ['test/processEngineV1']
+      }
     }
     resources {
       srcDirs = ["test"]
