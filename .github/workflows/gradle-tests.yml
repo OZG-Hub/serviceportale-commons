@@ -39,7 +39,7 @@ jobs:
       run: ./gradlew --version
 
     - name: Run build with Gradle Wrapper and Groovy ${{ matrix.groovy-version }}
-      run: ./gradlew clean test --stacktrace -PgroovyVersion=${{ matrix.groovy }}
+      run: ./gradlew clean test --stacktrace -PgroovyVersion=${{ matrix.groovy-version }}
 
     - name: Archive test run result
       uses: actions/upload-artifact@v4
