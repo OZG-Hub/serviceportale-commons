@@ -7,6 +7,7 @@ import de.seitenbau.serviceportal.scripting.api.v1.start.OrganisationseinheitKon
 import de.seitenbau.serviceportal.scripting.api.v1.start.OrganisationseinheitParameterV1
 import de.seitenbau.serviceportal.scripting.api.v1.start.StartParameterV1
 import spock.lang.Specification
+import commons.serviceportal.SupportContactDataGetter
 
 class SupportContactDataGetterSpecification extends Specification {
   def "get support contact for a missing org unit"() {

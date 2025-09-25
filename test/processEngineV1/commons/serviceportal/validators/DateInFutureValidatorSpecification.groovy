@@ -2,6 +2,7 @@ package commons.serviceportal.validators
 
 import spock.lang.Specification
 import java.text.SimpleDateFormat
+import commons.serviceportal.validators.DateInFutureValidator
 
 class DateInFutureValidatorSpecification extends Specification {
   def "Verifying a date in the future"() {

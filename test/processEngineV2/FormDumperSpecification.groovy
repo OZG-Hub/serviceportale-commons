@@ -21,6 +21,7 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormFieldContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.start.StartedByUserV1
 import spock.lang.Specification
+import groovy.xml.XmlSlurper
 
 import java.time.LocalDate
 import java.time.LocalTime
@@ -278,7 +279,7 @@ mainGroupId:0:name,"Testname"
     String html = dumper.dump()
 
     then:
-    def expectedHtml = new File('test/resources/expected.html').text.replaceAll("\n *<", "<")
+    def expectedHtml = getClass().getResourceAsStream('resources/expected.html').text.replaceAll("\n *<", "<")
     html == expectedHtml
   }
 
@@ -292,7 +293,7 @@ mainGroupId:0:name,"Testname"
     String html = dumper.dump()
 
     then:
-    def expectedHtml = new File('test/resources/expectedWithRowHeaders.html').text.replaceAll("\n *<", "<")
+    def expectedHtml = getClass().getResourceAsStream('resources/expectedWithRowHeaders.html').text.replaceAll("\n *<", "<")
     html == expectedHtml
   }
 
@@ -314,7 +315,7 @@ mainGroupId:0:name,"Testname"
     String html = dumper.dump()
 
     then:
-    def expectedHtml = new File('test/resources/expected_verifiedFormFieldValue.html').text.replaceAll("\n *<", "<")
+    def expectedHtml = getClass().getResourceAsStream('resources/expected_verifiedFormFieldValue.html').text.replaceAll("\n *<", "<")
     html == expectedHtml
   }
 
@@ -336,7 +337,7 @@ mainGroupId:0:name,"Testname"
     String html = dumper.dump()
 
     then:
-    def expectedHtml = new File('test/resources/expected_verifiedFormFieldValue_nullValues.html').text.replaceAll("\n *<", "<")
+    def expectedHtml = getClass().getResourceAsStream('resources/expected_verifiedFormFieldValue_nullValues.html').text.replaceAll("\n *<", "<")
     html == expectedHtml
   }
 

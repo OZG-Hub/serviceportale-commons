@@ -10,6 +10,10 @@ jobs:
 
     runs-on: ubuntu-22.04
 
+    strategy:
+      matrix:
+        groovy-version: [2.5.22, 4.0.8]
+
     steps:
     # Use the same time zone as the serviceportal server and developer computers as changes would lead to failing tests
     #   within the FormDumper specification
@@ -34,12 +38,14 @@ jobs:
     - name: Print gradlew version
       run: ./gradlew --version
 
-    - name: Run build with Gradle Wrapper
-      run: ./gradlew test --stacktrace
+    - name: Run tests with Gradle Wrapper and Groovy ${{ matrix.groovy-version }}
+      run: ./gradlew clean test --stacktrace -PgroovyVersion=${{ matrix.groovy-version }}
 
     - name: Archive test run result
       uses: actions/upload-artifact@v4
       if: success() || failure() # Run in any case. Even if the previous tests failed.
       with:
-        name: test-run-result
+        name: test-run-results-${{ matrix.groovy-version }}
         path: ./build/reports/tests/test
+
+

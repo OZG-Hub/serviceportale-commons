@@ -1,5 +1,6 @@
 package commons.serviceportal.forms
 
+import commons.serviceportal.forms.ConsistentCaseWorkerFormGenerator
 import groovy.json.JsonSlurper
 import spock.lang.Specification
 
