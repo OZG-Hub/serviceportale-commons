@@ -96,6 +96,7 @@ class CsvDumper extends AbstractFormDumper {
   }
 
   private static String escapeForCsv(String stringToEscape) {
+    stringToEscape = stringToEscape ?: ""
     // Normalize newline characters (CSV uses CRLF): Replace (Non-CR)LF with CRLF
     stringToEscape = stringToEscape.replaceAll(/(?<!\r)\n/, "\r\n")
 

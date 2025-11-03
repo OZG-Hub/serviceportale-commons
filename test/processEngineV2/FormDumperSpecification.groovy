@@ -56,6 +56,8 @@ class FormDumperSpecification extends Specification {
     FieldGroupInstanceV1 fieldGroupInstance = form.getGroupInstance(MAIN_GROUP_ID, 0)
     FieldGroupInstanceV1 secondFieldGroupInstance = form.getGroupInstance("secondGroupId", 0)
     fieldGroupInstance.setTitle("Main Group")
+    addFieldToInstance(fieldGroupInstance, "nullString", FieldTypeV1.STRING, "Null String")
+    fieldGroupInstance.getField("nullString").setValue(null)
     addFieldToInstance(fieldGroupInstance, "textanzeige", FieldTypeV1.TEXT, "Textanzeige")
     addFieldToInstance(fieldGroupInstance, "time", FieldTypeV1.TIME, "Time")
     addFieldToInstance(fieldGroupInstance, "yesno", FieldTypeV1.BOOLEAN, "Yes/No")
@@ -133,6 +135,7 @@ class FormDumperSpecification extends Specification {
     String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
     FormContentV1 formContent = JsonToFormContentConverter.convert(json)
     String expected = '''\
+mainGroupId:0:nullString,""
 mainGroupId:0:time,"10:44:00"
 mainGroupId:0:yesno,"true"
 mainGroupId:0:npa,"false"
@@ -297,7 +300,7 @@ mainGroupId:0:name,"Testname"
     html == expectedHtml
   }
 
-  def "dumping a form to HTML Table vith VerifiedFormFieldValueV1 values"() {
+  def "dumping a form to HTML Table with VerifiedFormFieldValueV1 values"() {
     given:
     FormContentV1 formContent = new FormContentV1("6000357:testform:v1.0")
     formContent.fields.put(
@@ -319,7 +322,7 @@ mainGroupId:0:name,"Testname"
     html == expectedHtml
   }
 
-  def "dumping a form to HTML Table vith VerifiedFormFieldValueV1 null values"() {
+  def "dumping a form to HTML Table with VerifiedFormFieldValueV1 null values"() {
     given:
     FormContentV1 formContent = new FormContentV1("6000357:testform:v1.0")
     formContent.fields.put(
@@ -353,6 +356,7 @@ mainGroupId:0:name,"Testname"
     then:
     output == """\
 Main Group (mainGroupId):
+  Null String >>> [Keine Eingabe] <<<
   Time >>> 10:44 <<<
   Yes/No >>> Ja <<<
   NPA >>> Sie waren NICHT mit dem neuem Personalausweis angemeldet <<<

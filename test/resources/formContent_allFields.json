@@ -23,6 +23,12 @@
       "valid": true,
       "possibleValues": null
     },
+    "mainGroupId:0:nullString": {
+      "value": null,
+      "validationMessages": [],
+      "valid": true,
+      "possibleValues": null
+    },
     "mainGroupId:0:time": {
       "value": "1970-01-01T09:44:00+0000",
       "validationMessages": [],
