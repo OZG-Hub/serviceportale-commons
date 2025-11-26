@@ -32,12 +32,12 @@ dependencies {
   }
 
   // testing
-  implementation group: 'net.bytebuddy', name: 'byte-buddy-gradle-plugin', version: '1.18.1'
+  implementation "net.bytebuddy:byte-buddy-gradle-plugin:1.18.1"
   testImplementation "org.spockframework:spock-core:${spockVersion}"
 
   // Allow IntelliJ to load groovy grapes. Not required for scripts in the commons repo, but
   // required for developing the scripts in the 'tools' folder.
-  implementation(group: 'org.apache.ivy', name: 'ivy', version: '2.5.3')
+  implementation "org.apache.ivy:ivy:2.5.3"
 }
 
 sourceSets {
