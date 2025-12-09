@@ -8,12 +8,12 @@ repositories {
 
 // The the serviceportale public API is maintained by the "Schildkröten" Team and the most recent version listed on
 // maven central: https://central.sonatype.com/artifact/de.seitenbau.serviceportal/prozess-scripting-api
-String serviceportalPublicApiVersion = "1.195.8"
+String serviceportalPublicApiVersion = "1.202.4"
 
 ext {
   groovyVersion = project.hasProperty("groovyVersion") ? project.groovyVersion : "2.5.22"
-  spockVersion = groovyVersion == "2.5.22" ? "2.0-M1-groovy-2.5" : "2.4-M6-groovy-4.0"
-  groovyGroup = groovyVersion.startsWith("4.") ? "org.apache.groovy" : "org.codehaus.groovy"
+  spockVersion = groovyVersion.startsWith("2.") ? "2.4-M7-groovy-2.5" : "2.4-M7-groovy-5.0"
+  groovyGroup = groovyVersion.startsWith("2.") ? "org.codehaus.groovy" : "org.apache.groovy"
 }
 
 dependencies {
@@ -21,7 +21,7 @@ dependencies {
           "${groovyGroup}:groovy-all:${groovyVersion}",
           "de.seitenbau.serviceportal:prozess-scripting-api:${serviceportalPublicApiVersion}",
           "org.activiti:activiti-engine:5.22.0",
-          "org.apache.commons:commons-text:1.13.0"
+          "org.apache.commons:commons-text:1.14.0"
 
   ].each { dep ->
     implementation(dep) {
@@ -32,12 +32,12 @@ dependencies {
   }
 
   // testing
-  implementation group: 'net.bytebuddy', name: 'byte-buddy-gradle-plugin', version: '1.10.1'
+  implementation "net.bytebuddy:byte-buddy-gradle-plugin:1.18.1"
   testImplementation "org.spockframework:spock-core:${spockVersion}"
 
   // Allow IntelliJ to load groovy grapes. Not required for scripts in the commons repo, but
   // required for developing the scripts in the 'tools' folder.
-  implementation(group: 'org.apache.ivy', name: 'ivy', version: '2.4.0')
+  implementation "org.apache.ivy:ivy:2.5.3"
 }
 
 sourceSets {
@@ -49,7 +49,7 @@ sourceSets {
 
   test {
     groovy {
-      if (groovyVersion.startsWith("4.")) {
+      if (groovyVersion.startsWith("5.")) {
         srcDirs = ['test/processEngineV2']
       } else {
         srcDirs = ['test/processEngineV1']
