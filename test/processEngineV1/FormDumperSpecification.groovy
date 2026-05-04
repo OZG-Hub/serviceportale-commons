@@ -255,23 +255,38 @@ mainGroupId:0:name,"Testname"
     String xml = dumper.dump()
 
     then:
-    !xml.contains("BinaryContentV1")
+    String result = """\
+<?xml version="1.0" encoding="UTF-8"?><serviceportal>
+  <serviceportal-fields>
+    <mainGroupId>
+      <instance_0>
+        <multiupload>
+          <selectedValue>
+              
+            <base64Data>UERGX0NPTlRFTlQ=</base64Data>
+              
+            <mimetype>application/pdf</mimetype>
+              
+            <filename>Test.pdf</filename>
+            
+          </selectedValue>
+          
+          <selectedValue>
+              
+            <base64Data>UE5HX0NPTlRFTlQ=</base64Data>
+              
+            <mimetype>image/png</mimetype>
+              
+            <filename>Bild.png</filename>
+            
+          </selectedValue>
+        </multiupload>
+      </instance_0>
+    </mainGroupId>
+  </serviceportal-fields>
+</serviceportal> """.replace("\n", "\r\n")
 
-    xml.contains("<base64Data>")
-    xml.contains("</base64Data>")
-    xml.contains("<mimetype>")
-    xml.contains("</mimetype>")
-    xml.contains("")
-    xml.contains("</filename>")
-
-    xml.contains("UERGX0NPTlRFTlQ=")
-    xml.contains("application/pdf")
-    xml.contains("Test.pdf")
-    xml.contains("UE5HX0NPTlRFTlQ=")
-    xml.contains("image/png")
-    xml.contains("Bild.png")
-
-    xml.findAll("<selectedValue>").size() == 2
+    xml.trim() == result.trim()
   }
 
     def "check if the form structure is the same with and without metadata"() {
