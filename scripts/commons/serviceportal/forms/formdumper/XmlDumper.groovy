@@ -176,7 +176,16 @@ class XmlDumper extends AbstractFormDumper {
         StringWriter listWriter = new StringWriter()
         MarkupBuilder listXml = new MarkupBuilder(listWriter)
         list.each {
+        if(it instanceof BinaryContentV1) {
+          BinaryContentV1 bc = it as BinaryContentV1
+          listXml."selectedValue" {
+            "base64Data"(bc.data.encodeBase64().toString())
+            "mimetype"(XmlUtil.escapeXml(bc.mimetype))
+            "filename"(XmlUtil.escapeXml(bc.uploadedFilename))
+          }
+        }else{
           listXml."selectedValue"(XmlUtil.escapeXml(it as String))
+         }
         }
         return listWriter.toString()
         break

@@ -231,6 +231,49 @@ mainGroupId:0:name,"Testname"
         parsedGroupInstance.npa == false
     }
 
+  def "multi-upload (List of BinaryContentV1)"() {
+    given:
+    String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
+    FormContentV1 formContent = JsonToFormContentConverter.convert(json)
+    ScriptingApiV1 mockedApi = Mock(ScriptingApiV1)
+    FormV1 form = createEmptyForm()
+    mockedApi.getForm("6000357:testform:v1.0") >> form
+
+    byte[] pdfBytes = "PDF_CONTENT".getBytes()
+    byte[] pngBytes = "PNG_CONTENT".getBytes()
+
+    BinaryContentV1 bc1 = new BinaryContentV1(data: pdfBytes, mimetype: "application/pdf", uploadedFilename: "Test.pdf")
+    BinaryContentV1 bc2 = new BinaryContentV1(data: pngBytes, mimetype: "image/png", uploadedFilename: "Bild.png")
+
+    addFieldToInstance(form.getGroupInstance(MAIN_GROUP_ID, 0), "multiupload", FieldTypeV1.MULTIPLE_FILE, null)
+
+    def row = form.getGroupInstance(MAIN_GROUP_ID, 0).getRows().last()
+    row.getFields()[0].setValue([bc1, bc2])
+
+    when:
+    XmlDumper dumper = new XmlDumper(formContent, mockedApi, false)
+    String xml = dumper.dump()
+
+    then:
+    !xml.contains("BinaryContentV1")
+
+    xml.contains("<base64Data>")
+    xml.contains("</base64Data>")
+    xml.contains("<mimetype>")
+    xml.contains("</mimetype>")
+    xml.contains("")
+    xml.contains("</filename>")
+
+    xml.contains("UERGX0NPTlRFTlQ=")
+    xml.contains("application/pdf")
+    xml.contains("Test.pdf")
+    xml.contains("UE5HX0NPTlRFTlQ=")
+    xml.contains("image/png")
+    xml.contains("Bild.png")
+
+    xml.findAll("<selectedValue>").size() == 2
+  }
+
     def "check if the form structure is the same with and without metadata"() {
         given:
         String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
