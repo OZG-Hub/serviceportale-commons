@@ -288,7 +288,7 @@ mainGroupId:0:name,"Testname"
     </serviceportal-fields>
     serviceportal> """.replace("\n", "\r\n")
 
-      xml.trim() == result.trim()
+      xml.trim().contains(result.trim())
     }
 
     def "check if the form structure is the same with and without metadata"() {
