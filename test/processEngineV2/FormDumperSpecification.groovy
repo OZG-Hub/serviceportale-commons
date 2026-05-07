@@ -61,6 +61,8 @@ class FormDumperSpecification extends Specification {
         fieldGroupInstance.setTitle("Main Group")
         addFieldToInstance(fieldGroupInstance, "nullString", FieldTypeV1.STRING, "Null String")
         fieldGroupInstance.getField("nullString").setValue(null)
+        addFieldToInstance(fieldGroupInstance, "dateNull", FieldTypeV1.DATE, "Null Date")
+        fieldGroupInstance.getField("dateNull").setValue(null)
         addFieldToInstance(fieldGroupInstance, "textanzeige", FieldTypeV1.TEXT, "Textanzeige")
         addFieldToInstance(fieldGroupInstance, "time", FieldTypeV1.TIME, "Time")
         addFieldToInstance(fieldGroupInstance, "yesno", FieldTypeV1.BOOLEAN, "Yes/No")
@@ -150,6 +152,7 @@ class FormDumperSpecification extends Specification {
         FormContentV1 formContent = JsonToFormContentConverter.convert(json)
         String expected = '''\
 mainGroupId:0:nullString,""
+mainGroupId:0:dateNull,""
 mainGroupId:0:time,"10:44:00"
 mainGroupId:0:yesno,"true"
 mainGroupId:0:npa,"false"
@@ -371,6 +374,7 @@ mainGroupId:0:name,"Testname"
         output == """\
 Main Group (mainGroupId):
   Null String >>> [Keine Eingabe] <<<
+  Null Date >>> [Keine Eingabe] <<<
   Time >>> 10:44 <<<
   Yes/No >>> Ja <<<
   NPA >>> Sie waren NICHT mit dem neuem Personalausweis angemeldet <<<

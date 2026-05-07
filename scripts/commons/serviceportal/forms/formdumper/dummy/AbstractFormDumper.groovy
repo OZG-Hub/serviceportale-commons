@@ -352,6 +352,10 @@ abstract class AbstractFormDumper {
   protected String renderFieldForTechnicalOutput(FormFieldV1 field) {
     def value = getValueFromField(field)
 
+    if (value == null || value.toString().isAllWhitespace()) {
+      return ""
+    }
+
     //noinspection GroovyFallthrough - those fall-throughs are on purpose.
     switch (field.type) {
 

@@ -182,6 +182,12 @@
       "valid": true,
       "possibleValues": null
     },
+    "mainGroupId:0:dateNull": {
+      "value": null,
+      "validationMessages": [],
+      "valid": true,
+      "possibleValues": null
+    },
     "mainGroupId:0:ca4618b9": {
       "value": null,
       "validationMessages": [],
