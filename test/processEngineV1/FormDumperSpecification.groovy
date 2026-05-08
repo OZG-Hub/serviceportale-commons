@@ -253,8 +253,6 @@ mainGroupId:0:name,"Testname"
     when:
     XmlDumper dumper = new XmlDumper(formContent, mockedApi, false)
     String xml = dumper.dump()
-
-    then:
     String result = """\
 <?xml version="1.0" encoding="UTF-8"?><serviceportal>
   <serviceportal-fields>
@@ -285,8 +283,11 @@ mainGroupId:0:name,"Testname"
     </mainGroupId>
   </serviceportal-fields>
 </serviceportal> """.replace("\n", "\r\n")
+    def expected = new XmlSlurper().parseText(result)
+    def actual = new XmlSlurper().parseText(xml)
 
-    xml.trim().contains(result.trim())
+    then:
+    expected.text() == actual.text()
   }
 
     def "check if the form structure is the same with and without metadata"() {
