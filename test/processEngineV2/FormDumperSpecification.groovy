@@ -236,6 +236,65 @@ mainGroupId:0:name,"Testname"
         parsedGroupInstance.npa == false
     }
 
+  def "multi-upload (List of BinaryContentV1)"() {
+    given:
+    String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
+    FormContentV1 formContent = JsonToFormContentConverter.convert(json)
+    ScriptingApiV1 mockedApi = Mock(ScriptingApiV1)
+    FormV1 form = createEmptyForm()
+    mockedApi.getForm("6000357:testform:v1.0") >> form
+
+    byte[] pdfBytes = "PDF_CONTENT".getBytes()
+    byte[] pngBytes = "PNG_CONTENT".getBytes()
+
+    BinaryContentV1 bc1 = new BinaryContentV1(data: pdfBytes, mimetype: "application/pdf", uploadedFilename: "Test.pdf")
+    BinaryContentV1 bc2 = new BinaryContentV1(data: pngBytes, mimetype: "image/png", uploadedFilename: "Bild.png")
+
+    addFieldToInstance(form.getGroupInstance(MAIN_GROUP_ID, 0), "multiupload", FieldTypeV1.MULTIPLE_FILE, null)
+
+    def row = form.getGroupInstance(MAIN_GROUP_ID, 0).getRows().last()
+    row.getFields()[0].setValue([bc1, bc2])
+
+    when:
+    XmlDumper dumper = new XmlDumper(formContent, mockedApi, false)
+    String xml = dumper.dump()
+    String result = """\
+<?xml version="1.0" encoding="UTF-8"?><serviceportal>
+  <serviceportal-fields>
+    <mainGroupId>
+      <instance_0>
+        <multiupload>
+          <selectedValue>
+              
+            <base64Data>UERGX0NPTlRFTlQ=</base64Data>
+              
+            <mimetype>application/pdf</mimetype>
+              
+            <filename>Test.pdf</filename>
+            
+          </selectedValue>
+          
+          <selectedValue>
+              
+            <base64Data>UE5HX0NPTlRFTlQ=</base64Data>
+              
+            <mimetype>image/png</mimetype>
+              
+            <filename>Bild.png</filename>
+            
+          </selectedValue>
+        </multiupload>
+      </instance_0>
+    </mainGroupId>
+  </serviceportal-fields>
+</serviceportal> """.replace("\n", "\r\n")
+    def expected = new XmlSlurper().parseText(result)
+    def actual = new XmlSlurper().parseText(xml)
+
+    then:
+    expected.text() == actual.text()
+  }
+
     def "check if the form structure is the same with and without metadata"() {
         given:
         String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
