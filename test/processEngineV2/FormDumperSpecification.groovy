@@ -258,35 +258,36 @@ mainGroupId:0:name,"Testname"
 
       then:
       String result = """\
-    xml version="1.0" encoding="UTF-8"?><serviceportal>
+<?xml version="1.0" encoding="UTF-8"?>
+<serviceportal>
     <serviceportal-fields>
-      <mainGroupId>
-        <instance_0>
-          <multiupload>
-            <selectedValue>
-                
-              <base64Data>UERGX0NPTlRFTlQ=</base64Data>
-                
-              <mimetype>application/pdf</mimetype>
-                
-              <filename>Test.pdf</filename>
-              
-            </selectedValue>
-            
-            <selectedValue>
-                
-              <base64Data>UE5HX0NPTlRFTlQ=</base64Data>
-                
-              <mimetype>image/png</mimetype>
-                
-              <filename>Bild.png</filename>
-              
-            </selectedValue>
-          </multiupload>
-        </instance_0>
-      </mainGroupId>
+        <mainGroupId>
+            <instance_0>
+                <multiupload>
+                    <selectedValue>
+
+                        <base64Data>UERGX0NPTlRFTlQ=</base64Data>
+
+                        <mimetype>application/pdf</mimetype>
+
+                        <filename>Test.pdf</filename>
+
+                    </selectedValue>
+
+                    <selectedValue>
+
+                        <base64Data>UE5HX0NPTlRFTlQ=</base64Data>
+
+                        <mimetype>image/png</mimetype>
+
+                        <filename>Bild.png</filename>
+
+                    </selectedValue>
+                </multiupload>
+            </instance_0>
+        </mainGroupId>
     </serviceportal-fields>
-    serviceportal> """.replace("\n", "\r\n")
+</serviceportal> """.replace("\n", "\r\n")
 
       xml.trim().contains(result.trim())
     }
