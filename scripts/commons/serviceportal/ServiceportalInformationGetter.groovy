@@ -1,7 +1,7 @@
 package commons.serviceportal
 
 import de.seitenbau.serviceportal.scripting.api.v1.ScriptingApiV1
-import org.activiti.engine.impl.context.Context
+import de.seitenbau.serviceportal.scripting.api.v1.process.ProcessEngineConfigV1
 
 /**
  * Get various information about the serviceportal instance this process is running in.
@@ -57,20 +57,24 @@ class ServiceportalInformationGetter {
     return true
   }
 
-  static ProxyConfig getProxyConfigForThisInstance() {
+  static ProxyConfig getProxyConfigForThisInstance(ScriptingApiV1 scriptingApiV1) throws IllegalArgumentException {
+    ScriptingApiV1 api = scriptingApiV1
     ProxyConfig result = new ProxyConfig()
 
-    def config = Context.getExecutionContext().getExecution().getVariable("processEngineConfig")
+    ProcessEngineConfigV1 processEngineConfig = api.getProcessEngineConfig()
     final String readingErrorMsg = "ServiceportalInformationGetter failed to read " +
             "processEngineConfig. This is not an error in your process but in the " +
             "serviceplattform configuration. Please verify that the ansible build variable " +
             "'processEngineConfig' was parsed correctly when building this instance."
 
-    result.host = config.get("internet.proxy.host")
+    if (processEngineConfig == null) {
+      throw new IllegalStateException(readingErrorMsg)
+    }
+
+    result.host = processEngineConfig.internetProxy.host
     assert result.host != null && !result.host.allWhitespace: readingErrorMsg
 
-    def portFromConfig = config.get("internet.proxy.port")
-    assert portFromConfig != null: readingErrorMsg
+    def portFromConfig = processEngineConfig.internetProxy.port
     result.port = portFromConfig as Integer
 
     return result
@@ -103,18 +107,18 @@ class ServiceportalInformationGetter {
   static String getHost(ScriptingApiV1 scriptingApiV1) {
     ScriptingApiV1 api = scriptingApiV1
 
-    // The host name is stored in a process instance variable 'processEngineConfig' that is automatically set by the
+    // The host name is stored in the 'processEngineConfig' that is automatically set by the
     // process engine. It might not be available in call activities, in which case we throw an exception.
     // See https://doku.pmp.seitenbau.com/display/DFO/Automatisch+gesetzte+Prozessvariablen
-    Map<String, Object> processEngineConfig = api.getVariable("processEngineConfig", Map)
+    ProcessEngineConfigV1 processEngineConfig = api.getProcessEngineConfig()
     if (processEngineConfig == null) {
       throw new IllegalStateException("ServiceportalInformationGetter failed to determine this instance's host name " +
-              "because the process instance variable 'processEngineConfig' was null. Since this variable is supposed " +
+              "because the processEngineConfig was null. Since this variable is supposed " +
               "to be automatically set by the process engine this should never happen, unless " +
               "ServiceportalInformationGetter was called from inside a call activity (in which case the problem might " +
               "be fixed by supplying 'processEngineConfig' as a parameter to that call activity).")
     }
-    String host = processEngineConfig.get("serviceportal.environment.main-portal-host")
+    String host = processEngineConfig.host
     assert host != null
     assert !host.isAllWhitespace()
     return host

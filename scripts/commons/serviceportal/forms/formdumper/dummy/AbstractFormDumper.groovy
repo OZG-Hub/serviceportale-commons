@@ -11,6 +11,7 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGDIKMapContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGeoMapContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
+import de.seitenbau.serviceportal.scripting.api.v1.process.ProcessEngineConfigV1
 import de.seitenbau.serviceportal.scripting.api.v1.start.StartParameterV1
 import de.seitenbau.serviceportal.scripting.api.v1.start.StartedByUserV1
 import groovy.json.JsonSlurper
@@ -453,8 +454,8 @@ abstract class AbstractFormDumper {
     Map<String, String> metadata = new HashMap<>()
 
     // Set dev or prod api url
-    Map<String, Object> processConfig = api.getVariable("processEngineConfig", Map)
-    String portal = processConfig.get("serviceportal.environment.main-portal-host").toString().trim()
+    ProcessEngineConfigV1 processEngineConfig = api.getProcessEngineConfig()
+    String portal = processEngineConfig.host.trim()
 
     // Determine the value for startedByUser based on the portal
     StartedByUserV1 startedByUser
@@ -464,7 +465,7 @@ abstract class AbstractFormDumper {
       StartParameterV1 startParameter = api.getVariable("startParameter", StartParameterV1)
       startedByUser = startParameter.startedByUser
     }
-    String postfachHandle = startedByUser.postfachHandle
+    String postfachHandle = startedByUser.postfach.handle
     JsonSlurper jsonSlurper = new JsonSlurper()
     def postfachHandleMap = jsonSlurper.parseText(postfachHandle)
     String postfachHandleId = postfachHandleMap.id
