@@ -19,6 +19,7 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.VerifiedFormFieldValueV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormFieldContentV1
+import de.seitenbau.serviceportal.scripting.api.v1.process.ProcessEngineConfigV1
 import de.seitenbau.serviceportal.scripting.api.v1.start.PostfachV1
 import de.seitenbau.serviceportal.scripting.api.v1.start.ServicekontoContextTypeV1
 import de.seitenbau.serviceportal.scripting.api.v1.start.StartedByUserV1
@@ -93,7 +94,9 @@ class FormDumperSpecification extends Specification {
         addFieldToInstance(fieldGroupInstance, "money", FieldTypeV1.EURO_BETRAG, "Eurobetrag")
         addFieldToInstance(fieldGroupInstance, "name", FieldTypeV1.STRING, "Name")
 
-        mockedApi.getVariable("processEngineConfig", Map) >> ["serviceportal.environment.main-portal-host": "dev.service-bw.de"]
+        ProcessEngineConfigV1.ProcessEngineConfigV1Builder processEngineConfigV1Builder = ProcessEngineConfigV1.builder()
+        processEngineConfigV1Builder.host("dev.service-bw.de")
+        mockedApi.getProcessEngineConfig() >> processEngineConfigV1Builder.build()
 
         mockedApi.getForm("6000357:testform:v1.0") >> form
 
