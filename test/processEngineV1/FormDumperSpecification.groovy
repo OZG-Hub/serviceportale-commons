@@ -82,6 +82,8 @@ class FormDumperSpecification extends Specification {
         mockedBinaryContent.mimetype >> "text/plain"
         mockedBinaryContent.uploadedFilename >> "test.txt"
         addFieldToInstance(fieldGroupInstance, "fileupload", FieldTypeV1.FILE, "Fileupload")
+        addFieldToInstance(fieldGroupInstance, "fileuploadNoValue", FieldTypeV1.FILE, "FileuploadNoValue")
+        addFieldToInstance(fieldGroupInstance, "multipleFileuploadNoValue", FieldTypeV1.MULTIPLE_FILE, "MultipleFileuploadNoValue")
         addFieldToInstance(fieldGroupInstance, "h2", FieldTypeV1.H2, "H2")
         addFieldToInstance(fieldGroupInstance, "h1", FieldTypeV1.H1, "H1")
         addFieldToInstance(secondFieldGroupInstance, "textanzeige", FieldTypeV1.TEXT, "Textanzeige")
@@ -112,7 +114,7 @@ class FormDumperSpecification extends Specification {
                         .type(PostfachV1.TypeV1.BUND)
                         .id("ab0b63be-ee10-4740-b5e7-66aa81834510")
                         .build())
-                .build();
+                .build()
         mockedApi.getVariable("startedByUser", StartedByUserV1) >> startedByUser
 
         // Mock escapeHtml function
@@ -165,6 +167,8 @@ content"
 mainGroupId:0:multiselect,"[firstOption, secondOption]"
 mainGroupId:0:checkboxList,"[firstOption, secondOption]"
 mainGroupId:0:fileupload,"UERGIGNvbnRlbnQ="
+mainGroupId:0:fileuploadNoValue,""
+mainGroupId:0:multipleFileuploadNoValue,"[]"
 mainGroupId:0:date,"2015-08-09"
 mainGroupId:0:selectOptions,"secondOption"
 mainGroupId:0:money,"5.66"
@@ -237,7 +241,7 @@ mainGroupId:0:name,"Testname"
         parsedGroupInstance.npa == false
     }
 
-  def "multi-upload (List of BinaryContentV1)"() {
+  def "correct rendering of multi-upload (List of BinaryContentV1) in XML"() {
     given:
     String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
     FormContentV1 formContent = JsonToFormContentConverter.convert(json)
@@ -446,6 +450,8 @@ content <<<
   Multiselect >>> first label, second label <<<
   Checkbox List >>> first label, second label <<<
   Fileupload >>> Datei: "dummy.pdf" <<<
+  FileuploadNoValue >>> [Keine Eingabe] <<<
+  MultipleFileuploadNoValue >>> [Keine Eingabe] <<<
   Date >>> 09.08.2015 <<<
   SelectOptions >>> second label <<<
   Eurobetrag >>> 5.66 € <<<
@@ -466,6 +472,8 @@ content <<<
         json.contains('"mainGroupId_0_yesno": true')
         json.contains('"mainGroupId_0_textfield": "Textfield content with <html>HTML</html>"')
         json.contains('"mainGroupId_0_fileupload": "dummy.pdf"')
+        json.contains('"mainGroupId_0_fileuploadNoValue": ""')
+        json.contains('"mainGroupId_0_multipleFileuploadNoValue": ""')
         json.contains('"mainGroupId_0_date": "2015-08-09"')
     }
 
