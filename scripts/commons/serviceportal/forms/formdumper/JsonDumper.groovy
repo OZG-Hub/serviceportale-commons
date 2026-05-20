@@ -76,22 +76,32 @@ class JsonDumper extends AbstractFormDumper {
     //noinspection GrDeprecatedAPIUsage - we need to support some deprecated fieldTypes as they might still be in use
     switch (field.type) {
       case FieldTypeV1.MULTIPLE_FILE:
-        if (fileNamesOnly) {
-          List<String> fileNames = (field.value as List<BinaryContentV1>).collect { it.uploadedFilename }
-          fieldsBuffer.put(fieldId, fileNames)
-        } else {
-          List uploadedFiles = []
-          (field.value as List<BinaryContentV1>).each {
-            uploadedFiles.add(binaryContentToMap(it))
+        if(field.value == null) {
+          fieldsBuffer.put(fieldId, "")
+        }
+        else {
+          if (fileNamesOnly) {
+            List<String> fileNames = (field.value as List<BinaryContentV1>).collect { it.uploadedFilename }
+            fieldsBuffer.put(fieldId, fileNames)
+          } else {
+            List uploadedFiles = []
+            (field.value as List<BinaryContentV1>).each {
+              uploadedFiles.add(binaryContentToMap(it))
+            }
+            fieldsBuffer.put(fieldId, uploadedFiles)
           }
-          fieldsBuffer.put(fieldId, uploadedFiles)
         }
         break
       case FieldTypeV1.FILE: // This is deprecated but still in use for old processes
-        if (fileNamesOnly) {
-          fieldsBuffer.put(fieldId, (field.value as BinaryContentV1).uploadedFilename)
-        } else {
-          fieldsBuffer.put(fieldId, binaryContentToMap(field.value))
+        if(field.value == null) {
+          fieldsBuffer.put(fieldId, "")
+        }
+        else {
+          if (fileNamesOnly) {
+            fieldsBuffer.put(fieldId, (field.value as BinaryContentV1).uploadedFilename)
+          } else {
+            fieldsBuffer.put(fieldId, binaryContentToMap(field.value as BinaryContentV1))
+          }
         }
         break
       case FieldTypeV1.GEO_MAP:

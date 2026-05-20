@@ -146,6 +146,18 @@
       "valid": true,
       "possibleValues": null
     },
+    "mainGroupId:0:fileuploadNoValue": {
+      "value": null,
+      "validationMessages": [],
+      "valid": true,
+      "possibleValues": null
+    },
+    "mainGroupId:0:multipleFileuploadNoValue": {
+      "value": null,
+      "validationMessages": [],
+      "valid": true,
+      "possibleValues": null
+    },
     "mainGroupId:0:checkboxList": {
       "value": [
         "firstOption",

@@ -79,11 +79,11 @@ class CsvDumper extends AbstractFormDumper {
     switch (field.type) {
       case FieldTypeV1.FILE:
         // Output is base64 encoded data
-        fieldValueAsString = (field.value as BinaryContentV1).data.encodeBase64()
+        fieldValueAsString = field.value ? (field.value as BinaryContentV1).data.encodeBase64() : ""
         break
       case FieldTypeV1.MULTIPLE_FILE:
         // Output is wrapped base64 encoded data Example: [abc123, def456]
-        List<BinaryContentV1> multiUpload = field.value
+        List<BinaryContentV1> multiUpload = field.value ?: []
         fieldValueAsString = "[${multiUpload.each { it.data.encodeBase64() }.join(",")}]"
         break
       default:
