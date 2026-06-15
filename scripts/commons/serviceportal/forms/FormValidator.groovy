@@ -80,7 +80,7 @@ class FormValidator {
           checkVisibilityCondition(innerCondition, sourceDescription)
         }
         break
-      case ["ShowOnProcessVariableInValuesCondition"]:
+      case ["ShowOnProcessVariableInValuesCondition", "ShowOnProcessVariableNotInValuesCondition"]:
         // Nothing to check here. We can't know if the process instance variable will be available, therefore we just
         // accept the situation.
         break
