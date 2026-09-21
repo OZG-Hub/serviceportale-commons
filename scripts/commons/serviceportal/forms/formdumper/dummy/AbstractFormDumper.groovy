@@ -458,13 +458,8 @@ abstract class AbstractFormDumper {
     String portal = processEngineConfig.host.trim()
 
     // Determine the value for startedByUser based on the portal
-    StartedByUserV1 startedByUser
-    if (portal.contains("amt24") || portal.contains("service-bw")) {
-      startedByUser = api.getVariable("startedByUser", StartedByUserV1)
-    } else {
-      StartParameterV1 startParameter = api.getVariable("startParameter", StartParameterV1)
-      startedByUser = startParameter.startedByUser
-    }
+    StartParameterV1 startParameter = api.getVariable("startParameter", StartParameterV1)
+    StartedByUserV1 startedByUser = startParameter.startedByUser
     String postfachHandle = startedByUser.postfach.handle
     JsonSlurper jsonSlurper = new JsonSlurper()
     def postfachHandleMap = jsonSlurper.parseText(postfachHandle)
