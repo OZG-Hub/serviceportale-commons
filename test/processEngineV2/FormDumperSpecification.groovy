@@ -22,6 +22,7 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormFieldContent
 import de.seitenbau.serviceportal.scripting.api.v1.process.ProcessEngineConfigV1
 import de.seitenbau.serviceportal.scripting.api.v1.start.PostfachV1
 import de.seitenbau.serviceportal.scripting.api.v1.start.ServicekontoContextTypeV1
+import de.seitenbau.serviceportal.scripting.api.v1.start.StartParameterV1
 import de.seitenbau.serviceportal.scripting.api.v1.start.StartedByUserV1
 import spock.lang.Specification
 // import groovy.xml.XmlSlurper required for Groovy 5
@@ -117,7 +118,10 @@ class FormDumperSpecification extends Specification {
                         .id("ab0b63be-ee10-4740-b5e7-66aa81834510")
                         .build())
                 .build()
-        mockedApi.getVariable("startedByUser", StartedByUserV1) >> startedByUser
+
+        StartParameterV1 parameterV1 = StartParameterV1.builder().startedByUser(startedByUser).build()
+
+        mockedApi.getVariable("startParameter", StartParameterV1) >> parameterV1
 
         // Mock escapeHtml function
         StringUtilsApiV1 mockedStringUtils = Mock(StringUtilsApiV1)
