@@ -453,14 +453,15 @@ abstract class AbstractFormDumper {
   protected Map<String, String> collectMetadata() {
     Map<String, String> metadata = new HashMap<>()
 
-    // Set dev or prod api url
-    ProcessEngineConfigV1 processEngineConfig = api.getProcessEngineConfig()
-    String portal = processEngineConfig.host.trim()
-
     // Determine the value for startedByUser based on the portal
     StartParameterV1 startParameter = api.getVariable("startParameter", StartParameterV1)
-    StartedByUserV1 startedByUser = startParameter.startedByUser
-    String postfachHandle = startedByUser.postfach.handle
+    StartedByUserV1 startedByUser
+    if (startParameter && startParameter.startedByUser) {
+      startedByUser = startParameter.startedByUser
+    } else {
+      startedByUser = api.getVariable("startedByUser", StartedByUserV1)
+    }
+    String postfachHandle = startedByUser?.postfach?.handle
     JsonSlurper jsonSlurper = new JsonSlurper()
     def postfachHandleMap = jsonSlurper.parseText(postfachHandle)
     String postfachHandleId = postfachHandleMap.id
