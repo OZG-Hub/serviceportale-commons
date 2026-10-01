@@ -81,7 +81,10 @@ class HtmlDumper extends AbstractFormDumper {
 
   @Override
   protected String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
-    currentResult += "<h${baseHeadingLevel}>${groupInstance.title}</h${baseHeadingLevel}>"
+    // Add title to group only if one is actually set
+    if(groupInstance.title != null && !groupInstance.title.strip().isEmpty()) {
+      currentResult += "<h${baseHeadingLevel}>${groupInstance.title}</h${baseHeadingLevel}>"
+    }
     // General headings for the instance
     currentResult += "<table class=\"summary-form\">"
     // Set Column Headers only when tableWithRowHeaders = false
