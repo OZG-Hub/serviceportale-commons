@@ -133,6 +133,10 @@ abstract class AbstractFormDumper {
           boolean groupHasMultipleInstances = group.isMultiple()
           // different hooks for groups with multiple or single instances
           if(groupHasMultipleInstances) {
+            // add group title before first group instance
+            if(groupInstance.index == 0) {
+              result = addGroupTitleForMultipleInstances(result, groupInstance)
+            }
             result = groupMultipleInstancesBeginHook(result, groupInstance, group.getInstanceTitleTemplate())
           } else {
             result = groupInstanceBeginHook(result, groupInstance)
@@ -173,7 +177,7 @@ abstract class AbstractFormDumper {
   protected abstract String metadataHook(String currentResult)
 
   /**
-   * Called at the begin of a group instance
+   * Called at the beginning of a group instance
    * @param currentResult
    * @param groupInstance
    * @return
@@ -181,13 +185,21 @@ abstract class AbstractFormDumper {
   protected abstract String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance)
 
   /**
-   * Called at the begin of a group instance of a multiple field group
+   * Called at the beginning of a group instance of a multiple field group
    * @param currentResult
    * @param groupInstance
    * @param groupInstanceTitle
    * @return
    */
   protected abstract String groupMultipleInstancesBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance, String groupInstanceTitle)
+
+  /**
+   * Called at the beginning of a multiple field group to add the title before the first instance
+   * @param currentResult
+   * @param groupInstance
+   * @return
+   */
+  protected abstract String addGroupTitleForMultipleInstances(String currentResult, FieldGroupInstanceV1 groupInstance)
 
   /**
    * Called when a group is closing (before opening a new group, or finishing the entire dumping process)
