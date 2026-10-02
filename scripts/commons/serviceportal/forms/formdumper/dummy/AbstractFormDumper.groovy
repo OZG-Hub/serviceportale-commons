@@ -129,7 +129,14 @@ abstract class AbstractFormDumper {
 
         // Only show the group instance if at least one field is shown
         if (minOneFieldVisible) {
-          result = groupInstanceBeginHook(result, groupInstance)
+          FieldGroupV1 group = getFieldGroupFromId(form, groupInstance.getId())
+          boolean groupHasMultipleInstances = group.isMultiple()
+          // different hooks for groups with multiple or single instances
+          if(groupHasMultipleInstances) {
+            result = groupMultipleInstancesBeginHook(result, groupInstance, group.getInstanceTitleTemplate())
+          } else {
+            result = groupInstanceBeginHook(result, groupInstance)
+          }
 
           groupInstance.rows.each { row ->
             row.fields.each { field ->
@@ -174,6 +181,15 @@ abstract class AbstractFormDumper {
   protected abstract String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance)
 
   /**
+   * Called at the begin of a group instance of a multiple field group
+   * @param currentResult
+   * @param groupInstance
+   * @param groupInstanceTitle
+   * @return
+   */
+  protected abstract String groupMultipleInstancesBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance, String groupInstanceTitle)
+
+  /**
    * Called when a group is closing (before opening a new group, or finishing the entire dumping process)
    * @param currentResult
    * @param groupInstance
@@ -199,6 +215,10 @@ abstract class AbstractFormDumper {
   protected String dumpingDoneHook(String currentResult) {
     // This default implementation just passes the current result through without any changes.
     return currentResult
+  }
+
+  protected static FieldGroupV1 getFieldGroupFromId(FormV1 form, String groupInstanceId) {
+    return form.getGroupTemplate(groupInstanceId)
   }
 
   /**
