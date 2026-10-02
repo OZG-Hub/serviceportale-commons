@@ -217,6 +217,12 @@ abstract class AbstractFormDumper {
     return currentResult
   }
 
+  /**
+   * Useful for getting the FieldGroupV1 object from its id to get at specific attributes of a field group.
+   * @param form
+   * @param groupInstanceId
+   * @return
+   */
   protected static FieldGroupV1 getFieldGroupFromId(FormV1 form, String groupInstanceId) {
     return form.getGroupTemplate(groupInstanceId)
   }
