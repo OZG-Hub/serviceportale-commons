@@ -86,6 +86,11 @@ class TextDumper extends AbstractFormDumper {
   }
 
   @Override
+  protected String addGroupTitleForMultipleInstances(String currentResult, FieldGroupInstanceV1 groupInstance) {
+    return null
+  }
+
+  @Override
   protected String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
     // Add extra newline to separate groups
     return currentResult + "\n"

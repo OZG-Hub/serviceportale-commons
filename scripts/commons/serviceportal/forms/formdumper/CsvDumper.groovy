@@ -72,6 +72,11 @@ class CsvDumper extends AbstractFormDumper {
   }
 
   @Override
+  protected String addGroupTitleForMultipleInstances(String currentResult, FieldGroupInstanceV1 groupInstance) {
+    return null
+  }
+
+  @Override
   protected String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
     // No changes when a group ends
     return currentResult

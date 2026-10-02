@@ -129,6 +129,11 @@ class XmlDumper extends AbstractFormDumper {
   }
 
   @Override
+  protected String addGroupTitleForMultipleInstances(String currentResult, FieldGroupInstanceV1 groupInstance) {
+    return null
+  }
+
+  @Override
   protected String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
     // close tag for current instance
     currentResult += "</${instance_prefix}${groupInstance.index}>"

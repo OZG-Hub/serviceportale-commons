@@ -81,20 +81,18 @@ class HtmlDumper extends AbstractFormDumper {
 
   @Override
   protected String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
-    // Add title to group only if one is actually set
-    if(groupInstance.title != null && !groupInstance.title.strip().isEmpty()) {
-      currentResult += "<h${baseHeadingLevel}>${groupInstance.title}</h${baseHeadingLevel}>"
-    }
-    return setGroupInstanceHtml(currentResult)
+    return setGroupInstanceHtml(currentResult, groupInstance.title)
   }
 
   @Override
   protected String groupMultipleInstancesBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance, String groupInstanceTitle) {
-    // Add groupInstanceTitle to group only if one is actually set
-    if(groupInstanceTitle != null && !groupInstanceTitle.strip().isEmpty()) {
-      currentResult += "<h${baseHeadingLevel}>${groupInstanceTitle}</h${baseHeadingLevel}>"
-    }
-    return setGroupInstanceHtml(currentResult)
+    return setGroupInstanceHtml(currentResult, groupInstanceTitle, baseHeadingLevel - 1)
+  }
+
+  @Override
+  protected String addGroupTitleForMultipleInstances(String currentResult, FieldGroupInstanceV1 groupInstance) {
+    currentResult = addGroupTitleHtml(currentResult, groupInstance.title)
+    return currentResult
   }
 
   @Override
@@ -164,7 +162,8 @@ class HtmlDumper extends AbstractFormDumper {
    * Generates the opening Html tag for the group instance
    *
    * */
-  private String setGroupInstanceHtml(String currentResult) {
+  private String setGroupInstanceHtml(String currentResult, String title, int headerLevel = baseHeadingLevel) {
+    currentResult += addGroupTitleHtml(currentResult, title, headerLevel)
     // General headings for the instance
     currentResult += "<table class=\"summary-form\">"
     // Set Column Headers only when tableWithRowHeaders = false
@@ -172,6 +171,14 @@ class HtmlDumper extends AbstractFormDumper {
       currentResult += "<thead><tr><th>Feld</th><th>Ihre Eingabe</th></tr></thead>"
     }
     currentResult += "<tbody>"
+    return currentResult
+  }
+
+  private String addGroupTitleHtml(String currentResult, String title, int headerLevel = baseHeadingLevel) {
+    // Add title to group only if one is actually set
+    if(title != null && !title.strip().isEmpty()) {
+      currentResult += "<h${headerLevel}>${title}</h${headerLevel}>"
+    }
     return currentResult
   }
 }
