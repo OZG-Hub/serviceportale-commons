@@ -64,6 +64,12 @@ class JsonDumper extends AbstractFormDumper {
   }
 
   @Override
+  protected String groupMultipleInstancesBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance, String groupInstanceTitle) {
+    // call default method unless at some point different behavior is planned
+    return groupInstanceBeginHook(currentResult, groupInstance)
+  }
+
+  @Override
   protected String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
     // No changes to the current Result. This Dumper has it's own buffer and only constructs a results-object in the last step.
     return currentResult

@@ -85,14 +85,16 @@ class HtmlDumper extends AbstractFormDumper {
     if(groupInstance.title != null && !groupInstance.title.strip().isEmpty()) {
       currentResult += "<h${baseHeadingLevel}>${groupInstance.title}</h${baseHeadingLevel}>"
     }
-    // General headings for the instance
-    currentResult += "<table class=\"summary-form\">"
-    // Set Column Headers only when tableWithRowHeaders = false
-    if (!tableWithRowHeaders){
-      currentResult += "<thead><tr><th>Feld</th><th>Ihre Eingabe</th></tr></thead>"
+    return setGroupInstanceHtml(currentResult)
+  }
+
+  @Override
+  protected String groupMultipleInstancesBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance, String groupInstanceTitle) {
+    // Add groupInstanceTitle to group only if one is actually set
+    if(groupInstanceTitle != null && !groupInstanceTitle.strip().isEmpty()) {
+      currentResult += "<h${baseHeadingLevel}>${groupInstanceTitle}</h${baseHeadingLevel}>"
     }
-    currentResult += "<tbody>"
-    return currentResult
+    return setGroupInstanceHtml(currentResult)
   }
 
   @Override
@@ -156,5 +158,20 @@ class HtmlDumper extends AbstractFormDumper {
   private static String generateEmbeddedImage(BinaryContentV1 imageFile) {
     String base64OfImage = Base64.getEncoder().encodeToString(imageFile.data)
     return "<img src='data:image/jpeg;base64,${base64OfImage}' width='100%'>"
+  }
+
+  /**
+   * Generates the opening Html tag for the group instance
+   *
+   * */
+  private String setGroupInstanceHtml(String currentResult) {
+    // General headings for the instance
+    currentResult += "<table class=\"summary-form\">"
+    // Set Column Headers only when tableWithRowHeaders = false
+    if (!tableWithRowHeaders) {
+      currentResult += "<thead><tr><th>Feld</th><th>Ihre Eingabe</th></tr></thead>"
+    }
+    currentResult += "<tbody>"
+    return currentResult
   }
 }

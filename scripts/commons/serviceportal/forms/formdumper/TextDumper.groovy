@@ -80,6 +80,12 @@ class TextDumper extends AbstractFormDumper {
   }
 
   @Override
+  protected String groupMultipleInstancesBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance, String groupInstanceTitle) {
+    // call default method unless at some point different behavior is planned
+    return groupInstanceBeginHook(currentResult, groupInstance)
+  }
+
+  @Override
   protected String groupInstanceEndHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
     // Add extra newline to separate groups
     return currentResult + "\n"
