@@ -137,7 +137,8 @@ abstract class AbstractFormDumper {
             if(groupInstance.index == 0) {
               result = addGroupTitleForMultipleInstances(result, groupInstance)
             }
-            result = groupMultipleInstancesBeginHook(result, groupInstance, group.getInstanceTitleTemplate())
+            String groupInstanceTitle = group.getInstanceTitleTemplate()
+            result = groupMultipleInstancesBeginHook(result, groupInstance, groupInstanceTitle)
           } else {
             result = groupInstanceBeginHook(result, groupInstance)
           }
