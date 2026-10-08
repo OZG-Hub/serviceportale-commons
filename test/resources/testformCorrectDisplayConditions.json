@@ -1,0 +1,114 @@
+{
+  "id": "b647850f",
+  "sections": [
+    {
+      "title": "",
+      "fieldGroups": [
+        {
+          "title": "",
+          "rows": [
+            {
+              "fields": [
+                {
+                  "id": "ff530ba2",
+                  "label": "",
+                  "type": "STRING",
+                  "width": 12,
+                  "validationRules": []
+                }
+              ]
+            }
+          ],
+          "id": "testgroup1"
+        },
+        {
+          "title": "",
+          "rows": [
+            {
+              "fields": [
+                {
+                  "id": "cc4a6bfe",
+                  "label": "",
+                  "type": "STRING",
+                  "width": 12,
+                  "validationRules": []
+                }
+              ]
+            },
+            {
+              "fields": [
+                {
+                  "id": "225e3220",
+                  "label": "",
+                  "type": "BOOLEAN",
+                  "layout": "",
+                  "value": null,
+                  "width": 12,
+                  "validationRules": []
+                }
+              ]
+            }
+          ],
+          "id": "testgroup2",
+          "displayConditions": [
+            {
+              "@type": "ShowOnEmptyFieldCondition",
+              "conditionFieldKey": {
+                "groupId": "testgroup1",
+                "groupIndex": 0,
+                "fieldId": "ff530ba2"
+              }
+            }
+          ]
+        },
+        {
+          "title": "",
+          "rows": [
+            {
+              "fields": [
+                {
+                  "id": "f9f391b6",
+                  "label": "",
+                  "type": "HINTBOX",
+                  "width": 12,
+                  "additionalConfig": {
+                    "@type": "AdditionalHintboxConfig",
+                    "text": "",
+                    "status": ""
+                  }
+                }
+              ]
+            },
+            {
+              "fields": [
+                {
+                  "id": "2e733c2c",
+                  "label": "",
+                  "type": "TEXT",
+                  "width": 12,
+                  "validationRules": []
+                }
+              ]
+            }
+          ],
+          "id": "testgroup3",
+          "displayConditions": [
+            {
+              "@type": "ShowOnFieldValueNotInValuesCondition",
+              "conditionFieldKey": {
+                "groupId": "testgroup1",
+                "groupIndex": 0,
+                "fieldId": "ff530ba2"
+              },
+              "values": [
+                "test"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "engineVersion": "1",
+  "title": "Testformular"
+}
