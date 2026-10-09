@@ -27,7 +27,7 @@ class FormValidator {
   /**
    * Performs the various tests. (See main object definition)
    */
-  void validate() {
+  void validate(boolean checkGroups = false) {
     // Parse json
     try {
       form = new JsonSlurper().parseText(json)
@@ -36,6 +36,9 @@ class FormValidator {
     }
 
     checkVisibilityConditions()
+    if(checkGroups) {
+      checkGroupVisibilityConditions()
+    }
   }
 
   private void checkVisibilityConditions() {
@@ -56,6 +59,27 @@ class FormValidator {
                   throw new FormValidationException("Failed to validate form '${form."id"}'.", e)
                 }
               }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private void checkGroupVisibilityConditions() {
+    form.sections.each { section ->
+      section.fieldGroups.each { fieldGroup ->
+        if (fieldGroup.displayConditions == null) {
+          // Group has no display conditions --> continue
+        } else {
+          fieldGroup.displayConditions.each { displayCondition ->
+            String sourceDescription = "Group '${fieldGroup.label}' (group: ${fieldGroup.id})"
+
+            try {
+              checkVisibilityCondition(displayCondition, sourceDescription)
+            } catch (FormValidationException e) {
+              // Re-throw exception with additional information about the form that failed
+              throw new FormValidationException("Failed to validate form '${form."id"}'.", e)
             }
           }
         }
