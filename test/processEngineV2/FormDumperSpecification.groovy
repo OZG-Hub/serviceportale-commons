@@ -559,6 +559,102 @@ content <<<
         htmlContent.contains("11:44")
         htmlContent.contains("09.08.2020")
     }
+
+    def "resolves placeholders in instance title templates of repeatable field groups"() {
+        given:
+        ScriptingApiV1 localApi = Mock(ScriptingApiV1)
+        FormV1 form = createEmptyForm()
+        FormSectionV1 section = form.getSections().get(0)
+
+        // --- A single (non-repeatable) field group with a static title ---
+        FieldGroupV1 singleGroup = form.getGroupTemplate(MAIN_GROUP_ID)
+        FieldGroupInstanceV1 singleInstance = form.getGroupInstance(MAIN_GROUP_ID, 0)
+        singleInstance.setTitle("Antragsteller")
+        addFieldToInstance(singleInstance, "name", FieldTypeV1.STRING, "Name")
+        singleInstance.getField("name").setValue("Max Mustermann")
+
+        // --- A second single field group ---
+        FieldGroupV1 secondSingleGroup = form.getGroupTemplate("secondGroupId")
+        FieldGroupInstanceV1 secondSingleInstance = form.getGroupInstance("secondGroupId", 0)
+        secondSingleInstance.setTitle("Adresse")
+        addFieldToInstance(secondSingleInstance, "strasse", FieldTypeV1.STRING, "Stra\u00dfe")
+        secondSingleInstance.getField("strasse").setValue("Musterweg 1")
+
+        // --- A repeatable field group using both placeholder types ---
+        FieldGroupV1 kinderGroup = new FieldGroupV1("kinderGroupId")
+        kinderGroup.setMultiple(true)
+        kinderGroup.setTitle("Kinder")
+        kinderGroup.setInstanceTitleTemplate('${instanceIndex}. Kind: ${instanceField:vorname}')
+        section.getFieldGroups().add(kinderGroup)
+
+        // First instance
+        FieldGroupInstanceV1 kinder1 = form.getGroupInstance("kinderGroupId", 0)
+        addFieldToInstance(kinder1, "vorname", FieldTypeV1.STRING, "Vorname")
+        kinder1.getField("vorname").setValue("Sebastian")
+
+        // Second instance
+        kinderGroup.addInstance(1)
+        FieldGroupInstanceV1 kinder2 = form.getGroupInstance("kinderGroupId", 1)
+        addFieldToInstance(kinder2, "vorname", FieldTypeV1.STRING, "Vorname")
+        kinder2.getField("vorname").setValue("Anna")
+
+        localApi.getForm("6000357:testform:v1.0") >> form
+        StringUtilsApiV1 localStringUtils = Mock(StringUtilsApiV1)
+        localApi.stringUtils >> localStringUtils
+        localStringUtils.escapeHtml(_) >> { args -> (String) args[0] }
+
+        FormContentV1 formContent = new FormContentV1("6000357:testform:v1.0")
+
+        when:
+        HtmlDumper dumper = new HtmlDumper(formContent, localApi, false)
+        String html = dumper.dump()
+
+        then:
+        // Single groups keep their group title as heading
+        html.contains('<h2>Antragsteller</h2>')
+        html.contains('<h2>Adresse</h2>')
+
+        // Repeatable group with template: placeholders get resolved for every instance
+        html.contains('<h3>1. Kind: Sebastian</h3>')
+        html.contains('<h3>2. Kind: Anna</h3>')
+
+        // Field values of the repeatable group are present
+        html.contains('<td>Vorname</td><td>Sebastian</td>')
+        html.contains('<td>Vorname</td><td>Anna</td>')
+
+        // No unresolved placeholder is left over in the output
+        !html.contains('${instanceIndex}')
+        !html.contains('${instanceField')
+    }
+
+    def "escapes resolved instance title values to avoid XSS"() {
+        given:
+        ScriptingApiV1 localApi = Mock(ScriptingApiV1)
+        FormV1 form = createEmptyForm()
+        FormSectionV1 section = form.getSections().get(0)
+        FieldGroupV1 group = new FieldGroupV1("gruppeId")
+        group.setMultiple(true)
+        group.setInstanceTitleTemplate('${instanceField:name}')
+        section.getFieldGroups().add(group)
+        FieldGroupInstanceV1 instance = form.getGroupInstance("gruppeId", 0)
+        addFieldToInstance(instance, "name", FieldTypeV1.STRING, "Name")
+        instance.getField("name").setValue("<script>alert('xss')</script>")
+
+        localApi.getForm("6000357:testform:v1.0") >> form
+        StringUtilsApiV1 localStringUtils = Mock(StringUtilsApiV1)
+        localApi.stringUtils >> localStringUtils
+        localStringUtils.escapeHtml(_) >> { String s -> s.replace('<', '&lt;').replace('>', '&gt;') }
+
+        FormContentV1 formContent = new FormContentV1("6000357:testform:v1.0")
+
+        when:
+        HtmlDumper dumper = new HtmlDumper(formContent, localApi, false)
+        String html = dumper.dump()
+
+        then:
+        html.contains('<h3>&lt;script&gt;alert(\'xss\')&lt;/script&gt;</h3>')
+        !html.contains('<h3><script>')
+    }
 }
 
 
