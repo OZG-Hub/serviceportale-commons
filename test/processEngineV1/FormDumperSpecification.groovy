@@ -245,7 +245,7 @@ mainGroupId:0:name,"Testname"
         parsedGroupInstance.npa == false
     }
 
-  def "correct rendering of multi-upload (List of BinaryContentV1) in XML"() {
+    def "correct rendering of multi-upload (List of BinaryContentV1) in XML"() {
     given:
     String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
     FormContentV1 formContent = JsonToFormContentConverter.convert(json)
@@ -528,7 +528,6 @@ content <<<
         dumperWithoutLogic.dump().contains(expectedDifference)
     }
 
-
     def "dumping form on a process engineV2 environment"() {
         given:
         String json = getClass().getResourceAsStream("resources/formContent_allFields.json").text
@@ -652,6 +651,46 @@ content <<<
         then:
         html.contains('<h3>&lt;script&gt;alert(\'xss\')&lt;/script&gt;</h3>')
         !html.contains('<h3><script>')
+    }
+
+    def "dumps a repeatable group without an instanceTitleTemplate without failing"() {
+        given:
+        ScriptingApiV1 localApi = Mock(ScriptingApiV1)
+        FormV1 form = createEmptyForm()
+        FormSectionV1 section = form.getSections().get(0)
+
+        // A repeatable group type that does not provide an instanceTitleTemplate
+        FieldGroupV1 group = new FieldGroupV1("ohneTitelGroupId")
+        group.setMultiple(true)
+        section.getFieldGroups().add(group)
+
+        FieldGroupInstanceV1 inst0 = form.getGroupInstance("ohneTitelGroupId", 0)
+        addFieldToInstance(inst0, "wert", FieldTypeV1.STRING, "Wert")
+        inst0.getField("wert").setValue("eins")
+
+        group.addInstance(1)
+        FieldGroupInstanceV1 inst1 = form.getGroupInstance("ohneTitelGroupId", 1)
+        addFieldToInstance(inst1, "wert", FieldTypeV1.STRING, "Wert")
+        inst1.getField("wert").setValue("zwei")
+
+        localApi.getForm("6000357:testform:v1.0") >> form
+        StringUtilsApiV1 localStringUtils = Mock(StringUtilsApiV1)
+        localApi.stringUtils >> localStringUtils
+        localStringUtils.escapeHtml(_) >> { args -> (String) args[0] }
+
+        FormContentV1 formContent = new FormContentV1("6000357:testform:v1.0")
+
+        when:
+        HtmlDumper dumper = new HtmlDumper(formContent, localApi, false)
+        String html = dumper.dump()
+
+        then:
+        group.getInstances().collect { it.index } == [0, 1]
+        // Both instances are still rendered as tables ...
+        html.contains('<td>Wert</td><td>eins</td>')
+        html.contains('<td>Wert</td><td>zwei</td>')
+        // ... but there is no instance title (since there is no instanceTitleTemplate)
+        !html.contains('<h3>')
     }
 }
 

@@ -87,7 +87,8 @@ class HtmlDumper extends AbstractFormDumper {
   @Override
   protected String groupMultipleInstancesBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance, String groupInstanceTitle) {
     // Escape the resolved instance title to avoid XSS, analogous to how field values are escaped in fieldHook.
-    String escapedInstanceTitle = api.stringUtils.escapeHtml(groupInstanceTitle)
+    // groupInstanceTitle can be null for repeatable group types that do not provide an instanceTitleTemplate.
+    String escapedInstanceTitle = groupInstanceTitle == null ? null : api.stringUtils.escapeHtml(groupInstanceTitle)
     return setGroupInstanceHtml(currentResult, escapedInstanceTitle, baseHeadingLevel + 1)
   }
 

@@ -260,6 +260,11 @@ abstract class AbstractFormDumper {
    * @return the resolved title
    */
   protected String resolveInstanceTitleTemplate(String template, FieldGroupInstanceV1 groupInstance) {
+    // Not every group type that can be repeatable provides an instanceTitleTemplate. In those cases the parameter
+    // is null and there is nothing to resolve.
+    if (template == null) {
+      return null
+    }
 
     Pattern pattern = ~/\$\{(instanceIndex|instanceField:[^}]*)\}/
     Matcher matcher = pattern.matcher(template)
