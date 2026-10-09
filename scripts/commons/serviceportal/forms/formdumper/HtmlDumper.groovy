@@ -165,7 +165,8 @@ class HtmlDumper extends AbstractFormDumper {
    *
    * */
   private String setGroupInstanceHtml(String currentResult, String title, int headerLevel = baseHeadingLevel) {
-    currentResult += addGroupTitleHtml(currentResult, title, headerLevel)
+    // addGroupTitleHtml returns the currentResult extended by the title heading (if a title is set).
+    currentResult = addGroupTitleHtml(currentResult, title, headerLevel)
     // General headings for the instance
     currentResult += "<table class=\"summary-form\">"
     // Set Column Headers only when tableWithRowHeaders = false
