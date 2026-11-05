@@ -11,7 +11,6 @@ import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGDIKMapContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.BinaryGeoMapContentV1
 import de.seitenbau.serviceportal.scripting.api.v1.form.content.FormContentV1
-import de.seitenbau.serviceportal.scripting.api.v1.process.ProcessEngineConfigV1
 import de.seitenbau.serviceportal.scripting.api.v1.start.StartParameterV1
 import de.seitenbau.serviceportal.scripting.api.v1.start.StartedByUserV1
 import groovy.json.JsonSlurper
@@ -22,6 +21,8 @@ import java.text.SimpleDateFormat
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.LocalDate
+import java.util.regex.Matcher
+import java.util.regex.Pattern
 
 /**
  * A FormDumper is a helper class designed to transfer the Serviceportal-proprietary form (= a FormContentV1 object)
@@ -129,7 +130,19 @@ abstract class AbstractFormDumper {
 
         // Only show the group instance if at least one field is shown
         if (minOneFieldVisible) {
-          result = groupInstanceBeginHook(result, groupInstance)
+          FieldGroupV1 group = getFieldGroupFromId(form, groupInstance.getId())
+          boolean groupHasMultipleInstances = group.isMultiple()
+          // different hooks for groups with multiple or single instances
+          if(groupHasMultipleInstances) {
+            // add group title before first group instance
+            if(groupInstance.index == 0) {
+              result = addGroupTitleForMultipleInstances(result, groupInstance)
+            }
+            String groupInstanceTitle = resolveInstanceTitleTemplate(group.getInstanceTitleTemplate(), groupInstance)
+            result = groupMultipleInstancesBeginHook(result, groupInstance, groupInstanceTitle)
+          } else {
+            result = groupInstanceBeginHook(result, groupInstance)
+          }
 
           groupInstance.rows.each { row ->
             row.fields.each { field ->
@@ -166,12 +179,29 @@ abstract class AbstractFormDumper {
   protected abstract String metadataHook(String currentResult)
 
   /**
-   * Called at the begin of a group instance
+   * Called at the beginning of a group instance
    * @param currentResult
    * @param groupInstance
    * @return
    */
   protected abstract String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance)
+
+  /**
+   * Called at the beginning of a group instance of a multiple field group
+   * @param currentResult
+   * @param groupInstance
+   * @param groupInstanceTitle
+   * @return
+   */
+  protected abstract String groupMultipleInstancesBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance, String groupInstanceTitle)
+
+  /**
+   * Called at the beginning of a multiple field group to add the title before the first instance
+   * @param currentResult
+   * @param groupInstance
+   * @return
+   */
+  protected abstract String addGroupTitleForMultipleInstances(String currentResult, FieldGroupInstanceV1 groupInstance)
 
   /**
    * Called when a group is closing (before opening a new group, or finishing the entire dumping process)
@@ -199,6 +229,62 @@ abstract class AbstractFormDumper {
   protected String dumpingDoneHook(String currentResult) {
     // This default implementation just passes the current result through without any changes.
     return currentResult
+  }
+
+  /**
+   * Useful for getting the FieldGroupV1 object from its id to get at specific attributes of a field group.
+   * @param form
+   * @param groupInstanceId
+   * @return
+   */
+  protected static FieldGroupV1 getFieldGroupFromId(FormV1 form, String groupInstanceId) {
+    return form.getGroupTemplate(groupInstanceId)
+  }
+
+  /**
+   * Resolves placeholders in an instance title template for a given group instance.
+   *
+   * When a field group is repeatable (more than one instance), its {@code instanceTitleTemplate} may contain
+   * placeholders that have to be filled at runtime using values of the respective group instance. Supported
+   * placeholders are:
+   * <ul>
+   *   <li>{@code ${instanceIndex}} - replaced with the 1-based instance index (the API index is 0-based)</li>
+   *   <li>{@code ${instanceField:&lt;fieldName&gt;}} - replaced with the user-facing representation of the field
+   *     {@code &lt;fieldName&gt;} within the current group instance (rendered like the field values in the output)</li>
+   * </ul>
+   * Unknown field references are resolved to {@code [&lt;fieldName&gt;]} so that they stay visible in the output
+   * instead of silently disappearing.
+   *
+   * @param template the instance title template to resolve
+   * @param groupInstance the group instance whose values are used to resolve the placeholders
+   * @return the resolved title
+   */
+  protected String resolveInstanceTitleTemplate(String template, FieldGroupInstanceV1 groupInstance) {
+    // Not every group type that can be repeatable provides an instanceTitleTemplate. In those cases the parameter
+    // is null and there is nothing to resolve.
+    if (template == null) {
+      return null
+    }
+
+    Pattern pattern = ~/\$\{(instanceIndex|instanceField:[^}]*)\}/
+    Matcher matcher = pattern.matcher(template)
+    StringBuffer sb = new StringBuffer()
+
+    while (matcher.find()) {
+      String placeholder = matcher.group(1)
+      String replacement
+      if ("instanceIndex".equals(placeholder)) {
+        replacement = (groupInstance.index + 1) as String
+      } else {
+        String fieldName = placeholder.substring("instanceField:".length()).trim()
+        FormFieldV1 field = groupInstance.getField(fieldName)
+        replacement = field == null ? "[${fieldName}]" : renderFieldForUserOutput(field)
+      }
+      matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement))
+    }
+    matcher.appendTail(sb)
+
+    return sb.toString()
   }
 
   /**

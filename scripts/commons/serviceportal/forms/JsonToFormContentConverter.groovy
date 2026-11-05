@@ -27,8 +27,8 @@ class JsonToFormContentConverter {
     parsed.each { key, value ->
       switch (key) {
         case "createdOn":
-          // Parse date
-          formContent."${key}" = DATE_FORMAT.parse(value as String)
+          // Parse date. Depending on the exporter the date is either formatted as string or an epoch timestamp.
+          formContent."${key}" = parseDate(value)
           break
 
         case ["notNullFieldValuesAsMap", "valid"]:
@@ -41,6 +41,14 @@ class JsonToFormContentConverter {
           formContent.fields = [:]
 
           value.each { fieldKey, formFieldContentMap ->
+
+            // Some exports wrap the actual value together with its Java type, e.g.
+            // { "type": "java.lang.String", "value": "Müller" }. Unwrap those before further processing.
+            if (formFieldContentMap.value instanceof Map
+                    && formFieldContentMap.value.containsKey("type")
+                    && formFieldContentMap.value.containsKey("value")) {
+              formFieldContentMap.value = formFieldContentMap.value.value
+            }
 
             // check if this field could be a date
             try {
@@ -95,5 +103,13 @@ class JsonToFormContentConverter {
     }
 
     return formContent
+  }
+
+  private static Date parseDate(Object value) {
+    if (value instanceof Number) {
+      // Epoch timestamp in milliseconds
+      return new Date(((Number) value).longValue())
+    }
+    return DATE_FORMAT.parse(value as String)
   }
 }

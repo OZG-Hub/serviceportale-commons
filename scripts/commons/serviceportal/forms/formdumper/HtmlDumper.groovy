@@ -81,14 +81,20 @@ class HtmlDumper extends AbstractFormDumper {
 
   @Override
   protected String groupInstanceBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance) {
-    currentResult += "<h${baseHeadingLevel}>${groupInstance.title}</h${baseHeadingLevel}>"
-    // General headings for the instance
-    currentResult += "<table class=\"summary-form\">"
-    // Set Column Headers only when tableWithRowHeaders = false
-    if (!tableWithRowHeaders){
-      currentResult += "<thead><tr><th>Feld</th><th>Ihre Eingabe</th></tr></thead>"
-    }
-    currentResult += "<tbody>"
+    return setGroupInstanceHtml(currentResult, groupInstance.title)
+  }
+
+  @Override
+  protected String groupMultipleInstancesBeginHook(String currentResult, FieldGroupInstanceV1 groupInstance, String groupInstanceTitle) {
+    // Escape the resolved instance title to avoid XSS, analogous to how field values are escaped in fieldHook.
+    // groupInstanceTitle can be null for repeatable group types that do not provide an instanceTitleTemplate.
+    String escapedInstanceTitle = groupInstanceTitle == null ? null : api.stringUtils.escapeHtml(groupInstanceTitle)
+    return setGroupInstanceHtml(currentResult, escapedInstanceTitle, baseHeadingLevel + 1)
+  }
+
+  @Override
+  protected String addGroupTitleForMultipleInstances(String currentResult, FieldGroupInstanceV1 groupInstance) {
+    currentResult = addGroupTitleHtml(currentResult, groupInstance.title)
     return currentResult
   }
 
@@ -153,5 +159,30 @@ class HtmlDumper extends AbstractFormDumper {
   private static String generateEmbeddedImage(BinaryContentV1 imageFile) {
     String base64OfImage = Base64.getEncoder().encodeToString(imageFile.data)
     return "<img src='data:image/jpeg;base64,${base64OfImage}' width='100%'>"
+  }
+
+  /**
+   * Generates the opening Html tag for the group instance
+   *
+   * */
+  private String setGroupInstanceHtml(String currentResult, String title, int headerLevel = baseHeadingLevel) {
+    // addGroupTitleHtml returns the currentResult extended by the title heading (if a title is set).
+    currentResult = addGroupTitleHtml(currentResult, title, headerLevel)
+    // General headings for the instance
+    currentResult += "<table class=\"summary-form\">"
+    // Set Column Headers only when tableWithRowHeaders = false
+    if (!tableWithRowHeaders) {
+      currentResult += "<thead><tr><th>Feld</th><th>Ihre Eingabe</th></tr></thead>"
+    }
+    currentResult += "<tbody>"
+    return currentResult
+  }
+
+  private String addGroupTitleHtml(String currentResult, String title, int headerLevel = baseHeadingLevel) {
+    // Add title to group only if one is actually set
+    if(title != null && !title.strip().isEmpty()) {
+      currentResult += "<h${headerLevel}>${title}</h${headerLevel}>"
+    }
+    return currentResult
   }
 }
