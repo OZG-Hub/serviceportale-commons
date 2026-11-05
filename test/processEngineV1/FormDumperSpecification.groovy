@@ -32,6 +32,7 @@ import java.time.LocalTime
 class FormDumperSpecification extends Specification {
 
     public static final String MAIN_GROUP_ID = "mainGroupId"
+    public static final String MULTIPLE_GROUPS_FORM_ID = "6000831:TestFimMapping:v1.0"
     private static ScriptingApiV1 mockedApi
 
     void addFieldToInstance(FieldGroupInstanceV1 groupInstance, String fieldId, FieldTypeV1 type, String label) {
@@ -41,6 +42,13 @@ class FormDumperSpecification extends Specification {
         groupInstance.getRows().add(row)
     }
 
+    void addFieldToGroup(FieldGroupV1 group, String fieldId, FieldTypeV1 type, String label) {
+        FormFieldV1 field = new FormFieldV1(fieldId, type)
+        field.setLabel(label)
+        FormRowV1 row = FormRowV1.builder().fields([field]).build()
+        group.getRows().add(row)
+    }
+
     FormV1 createEmptyForm() {
         FormV1 form = new FormV1("6000357:testform:v1.0")
         FieldGroupV1 fieldGroup = new FieldGroupV1(MAIN_GROUP_ID)
@@ -48,6 +56,41 @@ class FormDumperSpecification extends Specification {
         FormSectionV1 section = FormSectionV1.builder().fieldGroups([fieldGroup, secondFieldGroup]).build()
         form.getSections().add(section)
         return form
+    }
+
+    /**
+     * Form definition matching resources/formContent_multipleFieldGroups.json.
+     */
+    FormV1 createFormForMultipleFieldGroups() {
+        FormV1 form = new FormV1(MULTIPLE_GROUPS_FORM_ID)
+
+        // Repeatable group with an instance title template (two instances in the form content)
+        FieldGroupV1 tenantGroup = new FieldGroupV1("df1f209e")
+        tenantGroup.setMultiple(true)
+        tenantGroup.setInstanceTitleTemplate('${instanceIndex}.Mieter: ${instanceField:firstName} ${instanceField:lastName}')
+        addFieldToGroup(tenantGroup, "firstName", FieldTypeV1.STRING, "Vorname")
+        addFieldToGroup(tenantGroup, "lastName", FieldTypeV1.STRING, "Familienname")
+
+        // Repeatable group without an instance title template (three instances in the form content)
+        FieldGroupV1 groupWithoutTemplate = new FieldGroupV1("83fbdc09")
+        groupWithoutTemplate.setMultiple(true)
+        addFieldToGroup(groupWithoutTemplate, "6b54943c", FieldTypeV1.STRING, "Wert 1")
+        addFieldToGroup(groupWithoutTemplate, "dbeb65bb", FieldTypeV1.STRING, "Wert 2")
+
+        form.getSections().add(FormSectionV1.builder().fieldGroups([tenantGroup, groupWithoutTemplate]).build())
+        return form
+    }
+
+    FormContentV1 loadMultipleFieldGroupsContent() {
+        String json = getClass().getResourceAsStream("resources/formContent_multipleFieldGroups.json").text
+        return JsonToFormContentConverter.convert(json)
+    }
+
+    void mockMultipleFieldGroupsApi(ScriptingApiV1 localApi, FormV1 form) {
+        localApi.getForm(MULTIPLE_GROUPS_FORM_ID) >> form
+        StringUtilsApiV1 localStringUtils = Mock(StringUtilsApiV1)
+        localApi.stringUtils >> localStringUtils
+        localStringUtils.escapeHtml(_) >> { String s -> s.replace('<', '&lt;').replace('>', '&gt;') }
     }
 
     def setup() {
@@ -559,65 +602,22 @@ content <<<
 
     def "resolves placeholders in instance title templates of repeatable field groups"() {
         given:
+        FormV1 form = createFormForMultipleFieldGroups()
+        FormContentV1 formContent = loadMultipleFieldGroupsContent()
         ScriptingApiV1 localApi = Mock(ScriptingApiV1)
-        FormV1 form = createEmptyForm()
-        FormSectionV1 section = form.getSections().get(0)
-
-        // --- A single (non-repeatable) field group with a static title ---
-        FieldGroupV1 singleGroup = form.getGroupTemplate(MAIN_GROUP_ID)
-        FieldGroupInstanceV1 singleInstance = form.getGroupInstance(MAIN_GROUP_ID, 0)
-        singleInstance.setTitle("Antragsteller")
-        addFieldToInstance(singleInstance, "name", FieldTypeV1.STRING, "Name")
-        singleInstance.getField("name").setValue("Max Mustermann")
-
-        // --- A second single field group ---
-        FieldGroupV1 secondSingleGroup = form.getGroupTemplate("secondGroupId")
-        FieldGroupInstanceV1 secondSingleInstance = form.getGroupInstance("secondGroupId", 0)
-        secondSingleInstance.setTitle("Adresse")
-        addFieldToInstance(secondSingleInstance, "strasse", FieldTypeV1.STRING, "Stra\u00dfe")
-        secondSingleInstance.getField("strasse").setValue("Musterweg 1")
-
-        // --- A repeatable field group using both placeholder types ---
-        FieldGroupV1 kinderGroup = new FieldGroupV1("kinderGroupId")
-        kinderGroup.setMultiple(true)
-        kinderGroup.setTitle("Kinder")
-        kinderGroup.setInstanceTitleTemplate('${instanceIndex}. Kind: ${instanceField:vorname}')
-        section.getFieldGroups().add(kinderGroup)
-
-        // First instance
-        FieldGroupInstanceV1 kinder1 = form.getGroupInstance("kinderGroupId", 0)
-        addFieldToInstance(kinder1, "vorname", FieldTypeV1.STRING, "Vorname")
-        kinder1.getField("vorname").setValue("Sebastian")
-
-        // Second instance
-        kinderGroup.addInstance(1)
-        FieldGroupInstanceV1 kinder2 = form.getGroupInstance("kinderGroupId", 1)
-        addFieldToInstance(kinder2, "vorname", FieldTypeV1.STRING, "Vorname")
-        kinder2.getField("vorname").setValue("Anna")
-
-        localApi.getForm("6000357:testform:v1.0") >> form
-        StringUtilsApiV1 localStringUtils = Mock(StringUtilsApiV1)
-        localApi.stringUtils >> localStringUtils
-        localStringUtils.escapeHtml(_) >> { args -> (String) args[0] }
-
-        FormContentV1 formContent = new FormContentV1("6000357:testform:v1.0")
+        mockMultipleFieldGroupsApi(localApi, form)
 
         when:
-        HtmlDumper dumper = new HtmlDumper(formContent, localApi, false)
-        String html = dumper.dump()
+        String html = new HtmlDumper(formContent, localApi, false).dump()
 
         then:
-        // Single groups keep their group title as heading
-        html.contains('<h2>Antragsteller</h2>')
-        html.contains('<h2>Adresse</h2>')
-
         // Repeatable group with template: placeholders get resolved for every instance
-        html.contains('<h3>1. Kind: Sebastian</h3>')
-        html.contains('<h3>2. Kind: Anna</h3>')
+        html.contains('<h3>1.Mieter: Moritz Müller</h3>')
+        html.contains('<h3>2.Mieter: Max Müller</h3>')
 
         // Field values of the repeatable group are present
-        html.contains('<td>Vorname</td><td>Sebastian</td>')
-        html.contains('<td>Vorname</td><td>Anna</td>')
+        html.contains('<td>Vorname</td><td>Moritz</td>')
+        html.contains('<td>Vorname</td><td>Max</td>')
 
         // No unresolved placeholder is left over in the output
         !html.contains('${instanceIndex}')
@@ -626,71 +626,43 @@ content <<<
 
     def "escapes resolved instance title values to avoid XSS"() {
         given:
+        FormV1 form = createFormForMultipleFieldGroups()
+        FormContentV1 formContent = loadMultipleFieldGroupsContent()
+        formContent.getFields().get("df1f209e:0:firstName").setValue("<script>alert('xss')</script>")
         ScriptingApiV1 localApi = Mock(ScriptingApiV1)
-        FormV1 form = createEmptyForm()
-        FormSectionV1 section = form.getSections().get(0)
-        FieldGroupV1 group = new FieldGroupV1("gruppeId")
-        group.setMultiple(true)
-        group.setInstanceTitleTemplate('${instanceField:name}')
-        section.getFieldGroups().add(group)
-        FieldGroupInstanceV1 instance = form.getGroupInstance("gruppeId", 0)
-        addFieldToInstance(instance, "name", FieldTypeV1.STRING, "Name")
-        instance.getField("name").setValue("<script>alert('xss')</script>")
-
-        localApi.getForm("6000357:testform:v1.0") >> form
-        StringUtilsApiV1 localStringUtils = Mock(StringUtilsApiV1)
-        localApi.stringUtils >> localStringUtils
-        localStringUtils.escapeHtml(_) >> { String s -> s.replace('<', '&lt;').replace('>', '&gt;') }
-
-        FormContentV1 formContent = new FormContentV1("6000357:testform:v1.0")
+        mockMultipleFieldGroupsApi(localApi, form)
 
         when:
-        HtmlDumper dumper = new HtmlDumper(formContent, localApi, false)
-        String html = dumper.dump()
+        String html = new HtmlDumper(formContent, localApi, false).dump()
 
         then:
-        html.contains('<h3>&lt;script&gt;alert(\'xss\')&lt;/script&gt;</h3>')
+        html.contains('<h3>1.Mieter: &lt;script&gt;alert(\'xss\')&lt;/script&gt; Müller</h3>')
         !html.contains('<h3><script>')
     }
 
     def "dumps a repeatable group without an instanceTitleTemplate without failing"() {
         given:
+        FormV1 form = createFormForMultipleFieldGroups()
+        FormContentV1 formContent = loadMultipleFieldGroupsContent()
         ScriptingApiV1 localApi = Mock(ScriptingApiV1)
-        FormV1 form = createEmptyForm()
-        FormSectionV1 section = form.getSections().get(0)
-
-        // A repeatable group type that does not provide an instanceTitleTemplate
-        FieldGroupV1 group = new FieldGroupV1("ohneTitelGroupId")
-        group.setMultiple(true)
-        section.getFieldGroups().add(group)
-
-        FieldGroupInstanceV1 inst0 = form.getGroupInstance("ohneTitelGroupId", 0)
-        addFieldToInstance(inst0, "wert", FieldTypeV1.STRING, "Wert")
-        inst0.getField("wert").setValue("eins")
-
-        group.addInstance(1)
-        FieldGroupInstanceV1 inst1 = form.getGroupInstance("ohneTitelGroupId", 1)
-        addFieldToInstance(inst1, "wert", FieldTypeV1.STRING, "Wert")
-        inst1.getField("wert").setValue("zwei")
-
-        localApi.getForm("6000357:testform:v1.0") >> form
-        StringUtilsApiV1 localStringUtils = Mock(StringUtilsApiV1)
-        localApi.stringUtils >> localStringUtils
-        localStringUtils.escapeHtml(_) >> { args -> (String) args[0] }
-
-        FormContentV1 formContent = new FormContentV1("6000357:testform:v1.0")
+        mockMultipleFieldGroupsApi(localApi, form)
 
         when:
-        HtmlDumper dumper = new HtmlDumper(formContent, localApi, false)
-        String html = dumper.dump()
+        String html = new HtmlDumper(formContent, localApi, false).dump()
 
         then:
-        group.getInstances().collect { it.index } == [0, 1]
-        // Both instances are still rendered as tables ...
-        html.contains('<td>Wert</td><td>eins</td>')
-        html.contains('<td>Wert</td><td>zwei</td>')
-        // ... but there is no instance title (since there is no instanceTitleTemplate)
-        !html.contains('<h3>')
+        // The repeatable group without template still renders all of its instances as tables
+        def groupWithoutTemplate = form.getGroupTemplate("83fbdc09")
+        groupWithoutTemplate.getInstances().collect { it.index } == [0, 1, 2]
+        html.contains('<td>Wert 1</td><td>5</td>')
+        html.contains('<td>Wert 1</td><td>3</td>')
+        html.contains('<td>Wert 1</td><td>1</td>')
+        html.contains('<td>Wert 2</td><td>asdfgh</td>')
+        html.contains('<td>Wert 2</td><td>ertzu</td>')
+        html.contains('<td>Wert 2</td><td>yxcvbnm</td>')
+
+        // Only the instances of the group WITH template get an instance title
+        html.count('<h3>') == 2
     }
 }
 

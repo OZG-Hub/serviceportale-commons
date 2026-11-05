@@ -1,0 +1,215 @@
+{
+  "formId": "6000831:TestFimMapping:v1.0",
+  "formTitle": null,
+  "context": {
+    "postfachId": "101989993540",
+    "processInstanceId": "AaGsShuvc4SPkIOD1TDZpg",
+    "firstname": "SK Entwicklung",
+    "processInstanceStartTime": 1793891900333,
+    "npaAlreadyReadOut": false,
+    "rootProcessDefinitionKey": "m6000831.TestFimMapping_testmapper",
+    "processDefinitionName": "testmapper",
+    "sessionId": "3558653b-dbf7-436c-8cb1-fc22754c6cad",
+    "userId": "101989993540",
+    "servicekontoContextId": "101989993540",
+    "lastname": "3",
+    "taskSubprocessId": "AaGsShuvc4SPkIOD1TDZpg",
+    "processInstanceStartedByName": "SK Entwicklung 3",
+    "servicekontoNpaAuthenticated": false,
+    "superProcessDefinitionName": "testmapper",
+    "processType": "ELEKTRONISCHER_ANTRAG",
+    "postfachType": "SERVICEPORTAL",
+    "taskId": "AaGsShuvdFGQYorWAZwnYA",
+    "servicekontoContextType": "STANDARD",
+    "username": "SK Entwicklung 3"
+  },
+  "fields": {
+    "GruppenID:0:F000058": {
+      "value": {
+        "type": "java.lang.String",
+        "value": ""
+      },
+      "validationMessages": [],
+      "possibleValues": null
+    },
+    "df1f209e:1:lastName": {
+      "value": {
+        "type": "java.lang.String",
+        "value": "Müller"
+      },
+      "validationMessages": [],
+      "possibleValues": null
+    },
+    "GruppenID:0:F000002": {
+      "value": {
+        "type": "java.lang.String",
+        "value": ""
+      },
+      "validationMessages": [],
+      "possibleValues": null
+    },
+    "df1f209e:0:firstName": {
+      "value": {
+        "type": "java.lang.String",
+        "value": "Moritz"
+      },
+      "validationMessages": [],
+      "possibleValues": null
+    },
+    "df1f209e:0:0350ae4a": {
+      "value": {
+        "type": "java.lang.Boolean",
+        "value": false
+      },
+      "validationMessages": [],
+      "possibleValues": null
+    },
+    "GruppenID:0:F000067": {
+      "value": {
+        "type": "java.lang.String",
+        "value": "Seilerstraße"
+      },
+      "validationMessages": [],
+      "possibleValues": null
+    },
+    "GruppenID:0:F000056": {
+      "value": {
+        "type": "java.lang.String",
+        "value": ""
+      },
+      "validationMessages": [],
+      "possibleValues": null
+    },
+    "83fbdc09:0:0a51c4f6": {
+      "value": null,
+      "validationMessages": [],
+      "possibleValues": null
+    },
+    "GruppenID:0:F000033": {
+      "value": {
+        "type": "java.lang.String",
+        "value": "7"
+      },
+      "validationMessages": [],
+      "possibleValues": null
+    },
+    "GruppenID:0:F000055": {
+      "value": {
+        "type": "java.lang.String",
+        "value": "Konstanz"
+      },
+      "validationMessages": [],
+      "possibleValues": null
+    },
+    "GruppenID:0:F000007": {
+      "value": {
+        "type": "java.lang.String",
+        "value": ""
+      },
+      "validationMessages": [],
+      "possibleValues": []
+    },
+    "83fbdc09:0:dbeb65bb": {
+      "value": {
+        "type": "java.lang.String",
+        "value": "asdfgh"
+      },
+      "validationMessages": [],
+      "possibleValues": null
+    },
+    "83fbdc09:1:6b54943c": {
+      "value": {
+        "type": "java.lang.String",
+        "value": "3"
+      },
+      "validationMessages": [],
+      "possibleValues": null
+    },
+    "GruppenID:0:F000059": {
+      "value": {
+        "type": "java.lang.String",
+        "value": "78467"
+      },
+      "validationMessages": [],
+      "possibleValues": null
+    },
+    "df1f209e:1:firstName": {
+      "value": {
+        "type": "java.lang.String",
+        "value": "Max"
+      },
+      "validationMessages": [],
+      "possibleValues": null
+    },
+    "83fbdc09:1:0a51c4f6": {
+      "value": null,
+      "validationMessages": [],
+      "possibleValues": null
+    },
+    "GruppenID:0:FeldIdLand": {
+      "value": {
+        "type": "java.lang.String",
+        "value": ""
+      },
+      "validationMessages": [],
+      "possibleValues": null
+    },
+    "df1f209e:1:0350ae4a": {
+      "value": {
+        "type": "java.lang.Boolean",
+        "value": false
+      },
+      "validationMessages": [],
+      "possibleValues": null
+    },
+    "83fbdc09:0:6b54943c": {
+      "value": {
+        "type": "java.lang.String",
+        "value": "5"
+      },
+      "validationMessages": [],
+      "possibleValues": null
+    },
+    "83fbdc09:2:6b54943c": {
+      "value": {
+        "type": "java.lang.String",
+        "value": "1"
+      },
+      "validationMessages": [],
+      "possibleValues": null
+    },
+    "83fbdc09:2:dbeb65bb": {
+      "value": {
+        "type": "java.lang.String",
+        "value": "yxcvbnm"
+      },
+      "validationMessages": [],
+      "possibleValues": null
+    },
+    "83fbdc09:2:0a51c4f6": {
+      "value": null,
+      "validationMessages": [],
+      "possibleValues": null
+    },
+    "83fbdc09:1:dbeb65bb": {
+      "value": {
+        "type": "java.lang.String",
+        "value": "ertzu"
+      },
+      "validationMessages": [],
+      "possibleValues": null
+    },
+    "df1f209e:0:lastName": {
+      "value": {
+        "type": "java.lang.String",
+        "value": "Müller"
+      },
+      "validationMessages": [],
+      "possibleValues": null
+    }
+  },
+  "validationMessages": [],
+  "pressedCustomButton": null,
+  "createdOn": 1793891936872,
+  "appliedReplacements": null
+}
